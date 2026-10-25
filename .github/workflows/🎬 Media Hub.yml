@@ -1,0 +1,68 @@
+name: 🎬 Media Hub
+
+on:
+  workflow_dispatch:
+    inputs:
+      execution_target:
+        description: 'Kya run karna hai?'
+        required: true
+        default: 'all_media'
+        type: choice
+        options:
+          - all_media        # Saare Media Tests
+          - media_test       # 10 - Media Generator (Image + Audio)
+          - pixabay_test     # 11 - Pixabay (Video + Music)
+
+permissions:
+  contents: read
+
+jobs:
+  media_pipeline:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout Public Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: 📥 Checkout Private Repository (code-pvt)
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/code-pvt'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          path: 'private_source_code'
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Install Dependencies
+        run: pip install "requests>=2.31.0,<3.0.0"
+
+      # --- MEDIA TESTS ---
+      - name: 🧪 10 - Media Generator (Image + Audio)
+        if: |
+          github.event.inputs.execution_target == 'all_media' ||
+          github.event.inputs.execution_target == 'media_test'
+        working-directory: private_source_code/API
+        env:
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python media_10_test.py
+
+      - name: 🧪 11 - Pixabay Media (Video + Music)
+        if: |
+          github.event.inputs.execution_target == 'all_media' ||
+          github.event.inputs.execution_target == 'pixabay_test'
+        working-directory: private_source_code/API
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python pixabay_11_test.py
