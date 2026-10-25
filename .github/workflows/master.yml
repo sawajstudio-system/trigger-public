@@ -18,7 +18,7 @@ on:
           - openrouter_test  # 06 - OpenRouter
           - nvidia_test      # 07 - NVIDIA
           - cloudflare_test  # 08 - Cloudflare
-          - huggingface_test # 09 - Hugging Face
+          - cohere_test      # 09 - Cohere (NAYA)
 
 permissions:
   contents: read
@@ -32,9 +32,6 @@ jobs:
       REPORT_FILE: 'production_report'
 
     steps:
-      # =======================================================================
-      # 1. CHECKOUT REPOSITORIES
-      # =======================================================================
       - name: 📥 Checkout Public Repository
         uses: actions/checkout@v4
         with:
@@ -58,9 +55,6 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
-      # =======================================================================
-      # 2. REPORT GENERATOR
-      # =======================================================================
       - name: 📋 Generate Full Code Report & Send
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -81,10 +75,6 @@ jobs:
             fi
           done
 
-      # =======================================================================
-      # 3. SAARI API TESTS
-      # =======================================================================
-      
       - name: 🧪 02 - Telegram Bot Smoke Test
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -162,13 +152,13 @@ jobs:
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python cloudflare_08_test.py
 
-      - name: 🧪 09 - Hugging Face Smoke Test
+      - name: 🧪 09 - Cohere AI Smoke Test
         if: |
           github.event.inputs.execution_target == 'all' ||
-          github.event.inputs.execution_target == 'huggingface_test'
+          github.event.inputs.execution_target == 'cohere_test'
         working-directory: private_source_code/API
         env:
-          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python huggingface_09_test.py
+        run: python cohere_09_test.py
