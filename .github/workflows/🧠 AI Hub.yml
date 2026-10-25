@@ -1,4 +1,4 @@
-name: 👑 VIP Master Production Hub
+name: lab diagnosis
 
 on:
   workflow_dispatch:
@@ -35,9 +35,9 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
 
+    # Saare secrets yahan ek sath pass kiye gaye hain
     env:
       REPORT_FILE: 'production_report'
-      # Saare API keys yahan ek sath pass ki gayi hain
       TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
       TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
       TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
@@ -81,7 +81,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
-      # --- REPORT GENERATOR ---
+      # =======================================================================
+      # REPORT GENERATOR
+      # =======================================================================
       - name: 📋 Generate Full Code Report & Send
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -97,8 +99,10 @@ jobs:
             fi
           done
 
-      # --- SMART RUNNER (Ek hi step mein saare tests) ---
-      - name: 🚀 Run Selected Tests
+      # =======================================================================
+      # RUN SELECTED TEST OR ALL TESTS
+      # =======================================================================
+      - name: 🚀 Run Selected Test(s)
         if: github.event.inputs.execution_target != 'report_only'
         working-directory: private_source_code/API
         env:
