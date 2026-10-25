@@ -14,6 +14,7 @@ on:
           - pixabay_test     # 11 - Pixabay (Video + Music)
           - pexels_test      # 12 - Pexels (Video)
           - coverr_test      # 13 - Coverr (Video)
+          - magic_test       # 14 - Magic Hour (AI Image/Video)
 
 permissions:
   contents: read
@@ -90,3 +91,14 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python coverr_13_test.py
+
+      - name: 🧪 14 - Magic Hour AI (Image)
+        if: |
+          github.event.inputs.execution_target == 'all_media' ||
+          github.event.inputs.execution_target == 'magic_test'
+        working-directory: private_source_code/API
+        env:
+          MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python magic_14_test.py
