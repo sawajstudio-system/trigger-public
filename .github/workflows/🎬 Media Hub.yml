@@ -13,6 +13,7 @@ on:
           - media_test       # 10 - Media Generator (Image + Audio)
           - pixabay_test     # 11 - Pixabay (Video + Music)
           - pexels_test      # 12 - Pexels (Video)
+          - coverr_test      # 13 - Coverr (Video)
 
 permissions:
   contents: read
@@ -78,3 +79,14 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python pexels_12_test.py
+
+      - name: 🧪 13 - Coverr Video
+        if: |
+          github.event.inputs.execution_target == 'all_media' ||
+          github.event.inputs.execution_target == 'coverr_test'
+        working-directory: private_source_code/API
+        env:
+          COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python coverr_13_test.py
