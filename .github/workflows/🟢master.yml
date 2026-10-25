@@ -9,8 +9,8 @@ on:
         default: 'all'
         type: choice
         options:
-          - all              # Saari APIs ek sath run hongi
-          - report_only      # Sirf Code Report banegi
+          - all              # Saari APIs + Media + Pixabay
+          - report_only      # Sirf Code Report
           - telegram_test    # 02 - Telegram
           - github_test      # 03 - GitHub
           - gemini_test      # 04 - Gemini
@@ -19,6 +19,8 @@ on:
           - nvidia_test      # 07 - NVIDIA
           - cloudflare_test  # 08 - Cloudflare
           - cohere_test      # 09 - Cohere
+          - media_test       # 10 - Media Generator (Image + Audio)
+          - pixabay_test     # 11 - Pixabay (Video + Music)
 
 permissions:
   contents: read
@@ -172,3 +174,24 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python cohere_09_test.py
+
+      - name: 🧪 10 - Media Generator Test (Image + Audio)
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'media_test'
+        working-directory: private_source_code/API
+        env:
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python media_10_test.py
+
+      - name: 🧪 11 - Pixabay Media Test (Video + Music)
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'pixabay_test'
+        working-directory: private_source_code/API
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python pixabay_11_test.py
