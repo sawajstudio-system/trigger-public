@@ -14,7 +14,8 @@ on:
           - pixabay_test     # 11 - Pixabay (Video + Music)
           - pexels_test      # 12 - Pexels (Video)
           - coverr_test      # 13 - Coverr (Video)
-          - magic_test       # 14 - Magic Hour (AI Image/Video)
+          - magic_test       # 14 - Magic Hour (AI Image)
+          - cloudinary_test  # 16 - Cloudinary (Upload)
 
 permissions:
   contents: read
@@ -48,7 +49,10 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
-      # --- MEDIA TESTS ---
+      # =======================================================================
+      # MEDIA TESTS
+      # =======================================================================
+      
       - name: 🧪 10 - Media Generator (Image + Audio)
         if: |
           github.event.inputs.execution_target == 'all_media' ||
@@ -102,3 +106,16 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python magic_14_test.py
+
+      - name: 🧪 16 - Cloudinary Upload Test
+        if: |
+          github.event.inputs.execution_target == 'all_media' ||
+          github.event.inputs.execution_target == 'cloudinary_test'
+        working-directory: private_source_code/API
+        env:
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python cloudinary_16_test.py
