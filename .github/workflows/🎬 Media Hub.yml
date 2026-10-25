@@ -1,4 +1,4 @@
-name: 🎬 Media Production Hub
+name: 🎬 Smart Media Hub
 
 on:
   workflow_dispatch:
@@ -6,116 +6,55 @@ on:
       execution_target:
         description: 'Kya run karna hai?'
         required: true
-        default: 'all_media'
+        default: 'all'
         type: choice
         options:
-          - all_media        # Saare Media Tests
-          - media_test       # 10 - Media Generator (Image + Audio)
-          - pixabay_test     # 11 - Pixabay (Video + Music)
-          - pexels_test      # 12 - Pexels (Video)
-          - coverr_test      # 13 - Coverr (Video)
-          - magic_test       # 14 - Magic Hour (AI Image)
-          - cloudinary_test  # 16 - Cloudinary (Upload)
+          - all
+          - media_10_test
+          - pixabay_11_test
+          - pexels_12_test
+          - coverr_13_test
+          - magic_14_test
+          - cloudinary_16_test
 
 permissions:
   contents: read
 
 jobs:
-  media_pipeline:
+  run_media:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
 
     steps:
-      - name: 📥 Checkout Public Repository
+      - name: 📥 Checkout Repos
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: 📥 Checkout Private Repository (code-pvt)
+      - name: 📥 Checkout Private
         uses: actions/checkout@v4
         with:
           repository: 'sawajstudio-system/code-pvt'
           token: ${{ secrets.TOKEN_GITHUB }}
           path: 'private_source_code'
-          fetch-depth: 1
-          persist-credentials: false
-
+      
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
+      
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
-      # =======================================================================
-      # MEDIA TESTS
-      # =======================================================================
-      
-      - name: 🧪 10 - Media Generator (Image + Audio)
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'media_test'
+      - name: 🚀 Run Smart Tests
         working-directory: private_source_code/API
         env:
-          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python media_10_test.py
-
-      - name: 🧪 11 - Pixabay Media (Video + Music)
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'pixabay_test'
-        working-directory: private_source_code/API
-        env:
+          TARGET_TEST: ${{ github.event.inputs.execution_target }}
+          # Saare API Keys yahan pass karein
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python pixabay_11_test.py
-
-      - name: 🧪 12 - Pexels Video
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'pexels_test'
-        working-directory: private_source_code/API
-        env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python pexels_12_test.py
-
-      - name: 🧪 13 - Coverr Video
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'coverr_test'
-        working-directory: private_source_code/API
-        env:
           COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
-          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python coverr_13_test.py
-
-      - name: 🧪 14 - Magic Hour AI (Image)
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'magic_test'
-        working-directory: private_source_code/API
-        env:
           MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
-          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python magic_14_test.py
-
-      - name: 🧪 16 - Cloudinary Upload Test
-        if: |
-          github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'cloudinary_test'
-        working-directory: private_source_code/API
-        env:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python cloudinary_16_test.py
+        run: python run_my_tests.py
