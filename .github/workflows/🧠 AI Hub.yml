@@ -11,21 +11,21 @@ on:
         options:
           - all
           - report_only
-          - telegram_test
-          - github_test
-          - gemini_test
-          - groq_test
-          - openrouter_test
-          - nvidia_test
-          - cloudflare_test
-          - cohere_test
-          - anges_test
-          - media_test
-          - pixabay_test
-          - pexels_test
-          - coverr_test
-          - magic_test
-          - cloudinary_test
+          - telegram_02_test
+          - github_03_test
+          - gemini_04_test
+          - groq_06_test
+          - openrouter_05_test
+          - nvidia_07_test
+          - cloudflare_08_test
+          - cohere_09_test
+          - anges_15_test
+          - media_10_test
+          - pixabay_11_test
+          - pexels_12_test
+          - coverr_13_test
+          - magic_14_test
+          - cloudinary_16_test
 
 permissions:
   contents: read
@@ -80,6 +80,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
+      # =======================================================================
+      # REPORT GENERATOR
+      # =======================================================================
       - name: 📋 Generate Full Code Report & Send
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -95,6 +98,9 @@ jobs:
             fi
           done
 
+      # =======================================================================
+      # SMART TEST RUNNER
+      # =======================================================================
       - name: 🚀 Run Selected Test(s)
         if: github.event.inputs.execution_target != 'report_only'
         working-directory: private_source_code/API
@@ -102,7 +108,16 @@ jobs:
           TARGET: ${{ github.event.inputs.execution_target }}
         run: |
           if [ "$TARGET" == "all" ]; then
+            # Agar all select hai toh saare tests run karo
             python run_all_tests.py
           else
-            python "${TARGET}.py"
+            # Exact file dhoondhna jo dropdown mein select hui hai
+            FILE="${TARGET}.py"
+            if [ -f "$FILE" ]; then
+              echo "✅ Found file: $FILE"
+              python "$FILE"
+            else
+              echo "❌ Error: '$FILE' nahi mili! Folder check karein."
+              exit 1
+            fi
           fi
