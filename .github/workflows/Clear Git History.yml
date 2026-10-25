@@ -1,0 +1,41 @@
+name: 🧹 Clear Git History
+
+on:
+  workflow_dispatch: # Manually trigger karne ke liye
+
+permissions:
+  contents: write
+
+jobs:
+  clear-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Wipe History and Force Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "⏳ Purani history delete kar rahe hain..."
+          
+          # 1. Ek nayi orphan branch banate hain (isame koi past history nahi hogi)
+          git checkout --orphan temp-branch
+          
+          # 2. Saari files ko add karte hain
+          git add -A
+          
+          # 3. Ek fresh aur pehla commit banate hain
+          git commit -m "Fresh start: Cleaned all previous history"
+          
+          # 4. Remote URL set karte hain token ke sath
+          git remote set-url origin https://x-access-token:${{ secrets.TOKEN_GITHUB }}@github.com/${{ github.repository }}.git
+          
+          # 5. Force push karke remote ki main branch ko is nayi branch se replace kar dete hain
+          git push -f origin temp-branch:main
+          
+          echo "✅ History successfully clean ho gayi!"
