@@ -9,7 +9,7 @@ on:
         default: 'all'
         type: choice
         options:
-          - all              # Saari APIs + Media + Pixabay + Pexels
+          - all              # Saari APIs + Media + Master AI
           - report_only      # Sirf Code Report
           - telegram_test    # 02 - Telegram
           - github_test      # 03 - GitHub
@@ -21,7 +21,8 @@ on:
           - cohere_test      # 09 - Cohere
           - media_test       # 10 - Media Generator
           - pixabay_test     # 11 - Pixabay
-          - pexels_test      # 12 - Pexels (NAYA)
+          - pexels_test      # 12 - Pexels
+          - master_ai_test   # 13 - Master AI (All in One)
 
 permissions:
   contents: read
@@ -35,9 +36,167 @@ jobs:
       REPORT_FILE: 'production_report'
 
     steps:
-      # ... (Checkout aur Setup Python wale steps waisa hi rakhein) ...
+      # =======================================================================
+      # 1. CHECKOUT & SETUP
+      # =======================================================================
+      - name: 📥 Checkout Public Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
-      # ... (02 se 11 tak ke API tests yahan aayenge) ...
+      - name: 📥 Checkout Private Repository (code-pvt)
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/code-pvt'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          path: 'private_source_code'
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Install Dependencies
+        run: pip install "requests>=2.31.0,<3.0.0"
+
+      # =======================================================================
+      # 2. REPORT GENERATOR
+      # =======================================================================
+      - name: 📋 Generate Full Code Report & Send
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'report_only'
+        env:
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: |
+          python "private_source_code/API/Txt ripo generator.py"
+          mv private_source_code/API/*.txt ./ || true
+          
+          for file in *.txt; do
+            if [ -f "$file" ]; then
+              curl -sS --fail-with-body --retry 3 -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
+                   -F "document=@$file" \
+                   -F "caption=📂 [PRODUCTION] Code Report: $file" \
+                   "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
+            fi
+          done
+
+      # =======================================================================
+      # 3. SAARI API TESTS
+      # =======================================================================
+      
+      - name: 🧪 02 - Telegram Bot Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'telegram_test'
+        working-directory: private_source_code/API
+        env:
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python telegram_02_bot_test.py
+
+      - name: 🧪 03 - GitHub Token Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'github_test'
+        working-directory: private_source_code/API
+        env:
+          TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python github_03_token_test.py
+
+      - name: 🧪 04 - Gemini AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'gemini_test'
+        working-directory: private_source_code/API
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python gemini_04_test.py
+
+      - name: 🧪 05 - Groq AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'groq_test'
+        working-directory: private_source_code/API
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python groq_06_test.py
+
+      - name: 🧪 06 - OpenRouter AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'openrouter_test'
+        working-directory: private_source_code/API
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python openrouter_05_test.py
+
+      - name: 🧪 07 - NVIDIA NIM Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'nvidia_test'
+        working-directory: private_source_code/API
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python nvidia_07_test.py
+
+      - name: 🧪 08 - Cloudflare AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'cloudflare_test'
+        working-directory: private_source_code/API
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python cloudflare_08_test.py
+
+      - name: 🧪 09 - Cohere AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'cohere_test'
+        working-directory: private_source_code/API
+        env:
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python cohere_09_test.py
+
+      - name: 🧪 10 - Media Generator Test (Image + Audio)
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'media_test'
+        working-directory: private_source_code/API
+        env:
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python media_10_test.py
+
+      - name: 🧪 11 - Pixabay Media Test (Video + Music)
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'pixabay_test'
+        working-directory: private_source_code/API
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python pixabay_11_test.py
 
       - name: 🧪 12 - Pexels Video Test
         if: |
@@ -49,3 +208,20 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python pexels_12_test.py
+
+      - name: 🧪 13 - Master AI Test (All in One)
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'master_ai_test'
+        working-directory: private_source_code/API
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python master_ai_13_test.py
