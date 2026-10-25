@@ -1,4 +1,4 @@
-name: 🎬 Media Hub
+name: 🎬 Media Production Hub
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
           - all_media        # Saare Media Tests
           - media_test       # 10 - Media Generator (Image + Audio)
           - pixabay_test     # 11 - Pixabay (Video + Music)
-          - pexels_test      # 12 - Pexels (Video)
+          - coverr_test      # 12 - Coverr (Video)
 
 permissions:
   contents: read
@@ -68,13 +68,13 @@ jobs:
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python pixabay_11_test.py
 
-      - name: 🧪 12 - Pexels Video
+      - name: 🧪 12 - Coverr Video
         if: |
           github.event.inputs.execution_target == 'all_media' ||
-          github.event.inputs.execution_target == 'pexels_test'
+          github.event.inputs.execution_target == 'coverr_test'
         working-directory: private_source_code/API
         env:
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python pexels_12_test.py
+        run: python coverr_12_test.py
