@@ -9,16 +9,17 @@ on:
         default: 'all'
         type: choice
         options:
-          - all              # Saari APIs ek sath run hongi
-          - report_only      # Sirf Code Report banegi
-          - telegram_test    # 02 - Telegram
-          - github_test      # 03 - GitHub
-          - gemini_test      # 04 - Gemini
-          - groq_test        # 05 - Groq
-          - openrouter_test  # 06 - OpenRouter
-          - nvidia_test      # 07 - NVIDIA
-          - cloudflare_test  # 08 - Cloudflare
-          - cohere_test      # 09 - Cohere (NAYA)
+          - all                 # Saari APIs ek sath run hongi
+          - report_only         # Sirf Code Report banegi
+          - telegram_test       # 02 - Telegram
+          - github_test         # 03 - GitHub
+          - gemini_test         # 04 - Gemini
+          - groq_test           # 05 - Groq
+          - openrouter_test     # 06 - OpenRouter
+          - nvidia_test         # 07 - NVIDIA
+          - cloudflare_test     # 08 - Cloudflare
+          - cohere_test         # 09 - Cohere
+          - github_models_test  # 10 - GitHub Models
 
 permissions:
   contents: read
@@ -32,6 +33,9 @@ jobs:
       REPORT_FILE: 'production_report'
 
     steps:
+      # =======================================================================
+      # 1. CHECKOUT & SETUP
+      # =======================================================================
       - name: 📥 Checkout Public Repository
         uses: actions/checkout@v4
         with:
@@ -55,6 +59,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
+      # =======================================================================
+      # 2. REPORT GENERATOR
+      # =======================================================================
       - name: 📋 Generate Full Code Report & Send
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -75,6 +82,10 @@ jobs:
             fi
           done
 
+      # =======================================================================
+      # 3. SAARI API TESTS
+      # =======================================================================
+      
       - name: 🧪 02 - Telegram Bot Smoke Test
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -162,3 +173,14 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python cohere_09_test.py
+
+      - name: 🧪 10 - GitHub Models Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all' ||
+          github.event.inputs.execution_target == 'github_models_test'
+        working-directory: private_source_code/API
+        env:
+          TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python github_models_09_test.py
