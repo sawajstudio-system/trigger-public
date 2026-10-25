@@ -19,6 +19,7 @@ on:
           - nvidia_test      # 07 - NVIDIA
           - cloudflare_test  # 08 - Cloudflare
           - cohere_test      # 09 - Cohere
+          - anges_test       # 15 - Anges AI (NAYA)
 
 permissions:
   contents: read
@@ -161,3 +162,14 @@ jobs:
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python cohere_09_test.py
+
+      - name: 🧪 15 - Anges AI Smoke Test
+        if: |
+          github.event.inputs.execution_target == 'all_ai' ||
+          github.event.inputs.execution_target == 'anges_test'
+        working-directory: private_source_code/API
+        env:
+          ANGES_API_KEY: ${{ secrets.ANGES_API_KEY }}
+          TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python anges_15_test.py
