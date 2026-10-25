@@ -33,9 +33,6 @@ jobs:
       REPORT_FILE: 'production_report'
 
     steps:
-      # =======================================================================
-      # 1. CHECKOUT & SETUP
-      # =======================================================================
       - name: 📥 Checkout Public Repository
         uses: actions/checkout@v4
         with:
@@ -59,9 +56,6 @@ jobs:
       - name: 📦 Install Dependencies
         run: pip install "requests>=2.31.0,<3.0.0"
 
-      # =======================================================================
-      # 2. REPORT GENERATOR
-      # =======================================================================
       - name: 📋 Generate Full Code Report & Send
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -82,10 +76,6 @@ jobs:
             fi
           done
 
-      # =======================================================================
-      # 3. SAARI API TESTS
-      # =======================================================================
-      
       - name: 🧪 02 - Telegram Bot Smoke Test
         if: |
           github.event.inputs.execution_target == 'all' ||
@@ -180,7 +170,7 @@ jobs:
           github.event.inputs.execution_target == 'github_models_test'
         working-directory: private_source_code/API
         env:
-          TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+          GITHUB_MODELS_TOKEN: ${{ secrets.GITHUB_MODELS_TOKEN }}  # <-- Naya Token Yahan Pass Hua
           TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
         run: python github_models_10_test.py
