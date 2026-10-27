@@ -1,4 +1,4 @@
-name: Delete All Workflow Runs
+name: Delete All
 
 on:
   workflow_dispatch: # Isse aap GitHub Actions tab se manual ek click mein chala sakte hain
