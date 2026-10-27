@@ -1,0 +1,32 @@
+name: Workflow Cleanup
+
+on:
+  workflow_dispatch: # Manual ek-click se chalane ke liye
+  
+
+jobs:
+  powerful-delete:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Powerful Cleanup of All Workflow Runs
+        env:
+          GH_TOKEN: ${{ secrets.YAHAN_APNE_SECRET_KA_NAAM_DALO }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "🚀 Powerful cleanup process shuru ho raha hai..."
+          
+          # 500 tak ke saare runs ko fetch karke ek-ek karke delete karega
+          gh run list --repo "$REPO" --limit 500 --json databaseId --jq '.[].databaseId' | while read -r run_id; do
+            if [ -n "$run_id" ]; then
+              if [ "$run_id" != "${{ github.run_id }}" ]; then
+                echo "🗑️ Deleting run ID: $run_id"
+                gh run delete "$run_id" --repo "$REPO" || echo "⚠️ Run $run_id delete karne mein error aayi ya pehle se deleted hai."
+              else
+                echo "⚡ Skipping current active run ID: $run_id"
+              fi
+            fi
+          done
+          
+          echo "✨ Saare purane workflow runs successfully aur permanently delete ho chuke hain!"
