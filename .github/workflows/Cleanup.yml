@@ -1,8 +1,10 @@
-name: Workflow Cleanup
+name: Supercharged Workflow Cleanup
 
 on:
   workflow_dispatch: # Manual ek-click se chalane ke liye
-  
+  schedule:
+    # Har Sunday ko raat 12 baje automatic chalne ke liye (Cron schedule)
+    - cron: '0 0 * * 0'
 
 jobs:
   powerful-delete:
@@ -12,7 +14,7 @@ jobs:
     steps:
       - name: Powerful Cleanup of All Workflow Runs
         env:
-          GH_TOKEN: ${{ secrets.YAHAN_APNE_SECRET_KA_NAAM_DALO }}
+          GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
           REPO: ${{ github.repository }}
         run: |
           echo "🚀 Powerful cleanup process shuru ho raha hai..."
