@@ -1,7 +1,5 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-# Folder: API
-# File: media_10_test.py
 import os
 import sys
 import requests
@@ -17,9 +15,7 @@ def run_test():
 
     success_count = 0
 
-    # ==========================================
     # 1. IMAGE GENERATION
-    # ==========================================
     image_prompt = "A futuristic robot coding on a laptop, 4k resolution"
     encoded_image_prompt = requests.utils.quote(image_prompt)
     image_url = f"https://image.pollinations.ai/prompt/{encoded_image_prompt}?width=1024&height=1024&nologo=true"
@@ -32,7 +28,6 @@ def run_test():
             with open("temp_image.jpg", "wb") as f:
                 f.write(img_res.content)
             
-            # Telegram par Image bhejna
             url = f"https://api.telegram.org/bot{telegram_token}/sendPhoto"
             with open("temp_image.jpg", "rb") as photo:
                 payload = {
@@ -43,14 +38,10 @@ def run_test():
                 requests.post(url, data=payload, files={"photo": photo})
                 print("✅ Image sent successfully!")
                 success_count += 1
-        else:
-            print(f"❌ Image generation failed. HTTP {img_res.status_code}")
     except Exception as e:
         print(f"❌ Image Error: {e}")
 
-    # ==========================================
-    # 2. AUDIO GENERATION (Song)
-    # ==========================================
+    # 2. AUDIO GENERATION
     audio_prompt = "Upbeat electronic dance music, fast tempo, energetic"
     encoded_audio_prompt = requests.utils.quote(audio_prompt)
     audio_url = f"https://audio.pollinations.ai/prompt/{encoded_audio_prompt}"
@@ -63,7 +54,6 @@ def run_test():
             with open("temp_audio.mp3", "wb") as f:
                 f.write(audio_res.content)
             
-            # Telegram par Audio bhejna
             url = f"https://api.telegram.org/bot{telegram_token}/sendAudio"
             with open("temp_audio.mp3", "rb") as audio:
                 payload = {
@@ -74,22 +64,15 @@ def run_test():
                 requests.post(url, data=payload, files={"audio": audio})
                 print("✅ Audio sent successfully!")
                 success_count += 1
-        else:
-            print(f"❌ Audio generation failed. HTTP {audio_res.status_code}")
     except Exception as e:
-        # Yahan error aane par bhi script fail NAHI hogi, bas warning dikhayegi
+        # Yahan error aane par bhi script fail NAHI hogi
         print(f"⚠️ Audio Server Error (Bypassed): {e}")
 
-    # ==========================================
-    # FINAL RESULT
-    # ==========================================
-    # Agar image aur audio dono fail ho jayein tabhi test fail karo (Exit 1).
-    # Warna PASS (Exit 0) ho jayega.
     if success_count == 0:
         send_telegram_message("❌ <b>[PRODUCTION] MEDIA TEST FAILED:</b> Dono Image aur Audio generate nahi hue.")
         sys.exit(1)
     else:
-        print("✅ Media Test Passed (At least one media generated).")
+        print("✅ Media Test Passed.")
         sys.exit(0)
 
 if __name__ == "__main__":
