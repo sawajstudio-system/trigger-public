@@ -1,12 +1,11 @@
 # Folder: API
-# File: Txt ripo generator.py — FIXED
+# File: Txt ripo generator.py — FULL FIXED
 import os
 import sys
 import datetime
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-# ✅ FIX: scan root configurable
 SCAN_ROOT = os.environ.get("SCAN_ROOT", ".")
 OUTPUT_FILE = os.environ.get("REPORT_FILE", "production_report.txt")
 PRIVATE_DIR = "private_source_code"
@@ -18,15 +17,17 @@ SKIP_DIR_NAMES = {
     ".pytest_cache", ".mypy_cache", ".cache", "coverage",
 }
 SKIP_FILE_NAMES = {OUTPUT_FILE, ".DS_Store", "Thumbs.db", "desktop.ini"}
+
+# ✅ FIX: Yahan .yml, .yaml, aur .github folder ki files pakki include hain
 TEXT_EXTENSIONS = {
     ".py", ".txt", ".yml", ".yaml", ".md", ".json", ".html",
     ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml",
-    ".toml", ".ini", ".cfg", ".conf",
+    ".toml", ".ini", ".cfg", ".conf", ".dockerfile", ".gitignore"
 }
 
 
 def is_text_file(filepath):
-    return os.path.splitext(filepath)[1].lower() in TEXT_EXTENSIONS
+    return os.path.splitext(filepath)[1].lower() in TEXT_EXTENSIONS or filepath.endswith("Dockerfile")
 
 
 def walk_repo(base_dir, exclude_paths=None):
