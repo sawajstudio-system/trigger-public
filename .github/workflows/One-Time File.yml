@@ -22,14 +22,14 @@ jobs:
           rm -f "Firent/service_api/utils/Txt ripo generator.py"
           echo "✅ Deleted."
 
-      - name: 3. Write New VIP Generator using Python
+      - name: 3. Write New VIP Generator
         run: |
           echo "📝 Writing new VIP Report Generator in system_service..."
-          python3 - << 'PYEOF'
-import os
-
-file_path = "Firent/system_service/TG_report/Ripo_txt_tg.py"
-code = '''# Ripo_txt_tg.py - VIP Production Generator
+          # Hum YML ke andar bada code nahi likhenge, bash ko bolenge ki wo file banaye
+          # Isse YAML syntax error kabhi nahi aayega.
+          touch "Firent/system_service/TG_report/Ripo_txt_tg.py"
+          cat > "Firent/system_service/TG_report/Ripo_txt_tg.py" << 'ENDOFCODE'
+# Ripo_txt_tg.py - VIP Production Generator
 import os
 import sys
 import datetime
@@ -74,26 +74,26 @@ def main():
         return 1
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("╔══════════════════════════════════════════════════════════╗\\n")
-        f.write("║       👑 VIP PRODUCTION CODE REPORT 👑                   ║\\n")
-        f.write("╚══════════════════════════════════════════════════════════╝\\n\\n")
-        f.write(f"⏱️ Date/Time : {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\\n")
-        f.write(f"📂 Total Files : {len(all_files)}\\n")
-        f.write("🌐 Repos: Firent + Backend\\n")
-        f.write("━" * 60 + "\\n\\n📑 INDEX\\n" + "━" * 60 + "\\n")
+        f.write("╔══════════════════════════════════════════════════════════╗\n")
+        f.write("║       👑 VIP PRODUCTION CODE REPORT 👑                   ║\n")
+        f.write("╚══════════════════════════════════════════════════════════╝\n\n")
+        f.write(f"⏱️ Date/Time : {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+        f.write(f"📂 Total Files : {len(all_files)}\n")
+        f.write("🌐 Repos: Firent + Backend\n")
+        f.write("━" * 60 + "\n\n📑 INDEX\n" + "━" * 60 + "\n")
 
         for idx, (_, disp) in enumerate(all_files, 1):
-            f.write(f"{idx:02d}. {disp}\\n")
-        f.write("━" * 60 + "\\n\\n")
+            f.write(f"{idx:02d}. {disp}\n")
+        f.write("━" * 60 + "\n\n")
 
         for full, disp in all_files:
             try:
                 if os.path.getsize(full) > MAX_FILE_SIZE: continue
-                f.write(f"\\n{'=' * 60}\\n📄 FILE: {disp}\\n{'=' * 60}\\n")
+                f.write(f"\n{'=' * 60}\n📄 FILE: {disp}\n{'=' * 60}\n")
                 with open(full, "r", encoding="utf-8", errors="ignore") as src:
-                    for i, line in enumerate(src.read().split("\\n"), 1):
-                        f.write(f"{i:03d} | {line}\\n")
-                f.write("\\n")
+                    for i, line in enumerate(src.read().split("\n"), 1):
+                        f.write(f"{i:03d} | {line}\n")
+                f.write("\n")
             except Exception as e:
                 print(f"Error: {disp} -> {e}")
 
@@ -110,10 +110,7 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-'''
-with open(file_path, "w", encoding="utf-8") as f:
-    f.write(code)
-PYEOF
+ENDOFCODE
           echo "✅ File generated perfectly."
 
       - name: 4. Update Universal Master YML
@@ -122,12 +119,8 @@ PYEOF
           YML_FILE="Firent/.github/workflows/universal_master.yml"
           
           if [ -f "$YML_FILE" ]; then
-            # Replace generator path
             sed -i 's|GEN=$(find Firent/service_api/utils -type f -name "Txt ripo generator.py" | head -n1)|GEN=$(find Firent/system_service/TG_report -name "Ripo_txt_tg.py" | head -n1)|' "$YML_FILE"
-            
-            # Replace run logic (since our script auto-sends, we remove curl)
             sed -i '/curl -sS --fail-with-body/,+4d' "$YML_FILE"
-            
             echo "✅ YML updated."
           fi
 
