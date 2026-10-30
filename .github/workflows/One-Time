@@ -1,4 +1,4 @@
-name: Copy API Folder to Public Repo
+name: pvt Public Repo
 
 on:
   workflow_dispatch: # Manual trigger
