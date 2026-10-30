@@ -1,4 +1,4 @@
-name: Universal Master
+name: 🌐Universal Master
 
 on:
   workflow_dispatch:
@@ -11,25 +11,24 @@ on:
         options:
           - 'all'
           - 'Git Clean'
-          - 'Ripo TXT'
           - 'Ripo ZIP'
           - 'report_only'
-          - 'cloudinary_16_test'
-          - 'tanvo_17_test'
-          - 'magic_14_test'
-          - 'media_10_test'
-          - 'pixabay_11_test'
-          - 'pexels_12_test'
-          - 'coverr_13_test'
-          - 'telegram_02_test'
-          - 'github_03_test'
-          - 'gemini_04_test'
-          - 'groq_06_test'
-          - 'openrouter_05_test'
-          - 'nvidia_07_test'
-          - 'cloudflare_08_test'
-          - 'cohere_09_test'
-          - 'anges_15_test'
+          - 'cloudinary_test'
+          - 'tanvo_test'
+          - 'magic_test'
+          - 'media_test'
+          - 'pixabay_test'
+          - 'pexels_test'
+          - 'coverr_test'
+          - 'telegram_02_bot_test'
+          - 'github_03_token_test'
+          - 'gemini_test'
+          - 'groq_test'
+          - 'openrouter_test'
+          - 'nvidia_test'
+          - 'cloudflare_test'
+          - 'cohere_test'
+          - 'anges_test'
 
 concurrency:
   group: supercharged-master-${{ github.ref }}-${{ inputs.task }}
@@ -44,7 +43,7 @@ jobs:
       contents: read
 
     env:
-      REPORT_FILE: 'production_report'
+      REPORT_FILE: 'production_report.txt'
       BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
       CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
       TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
@@ -69,7 +68,7 @@ jobs:
       TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
       PYTHONUNBUFFERED: '1'
       PYTHONDONTWRITEBYTECODE: '1'
-      PYTHONPATH: 'service_api:service_api/integrations'
+      PYTHONPATH: 'Firent/service_api:Firent/service_api/integrations'
 
     steps:
       - name: 1. Checkout Firent Repo
@@ -95,8 +94,7 @@ jobs:
       - name: 4. Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "requests>=2.31.0,<3.0.0"
-          pip install pytest || true
+          pip install "requests>=2.31.0,<3.0.0" pytest || true
 
       # ==========================================================
       # 1. TASK: Git Clean
@@ -121,25 +119,7 @@ jobs:
           fi
 
       # ==========================================================
-      # 2. TASK: Ripo TXT
-      # ==========================================================
-      - name: 📄 Run Ripo TXT Generator
-        if: |
-          github.event.inputs.task == 'all' || 
-          github.event.inputs.task == 'Ripo TXT'
-        run: |
-          set -euo pipefail
-          FILE=$(find Firent/system_service/TG_report -maxdepth 2 -name "Ripo_txt_tg.py" | head -n1)
-          if [ -n "$FILE" ]; then
-            python3 "$FILE"
-            echo "SYS_TXT_STATUS=✅ Sent" >> $GITHUB_ENV
-          else
-            echo "SYS_TXT_STATUS=❌ Missing" >> $GITHUB_ENV
-            exit 1
-          fi
-
-      # ==========================================================
-      # 3. TASK: Ripo ZIP
+      # 2. TASK: Ripo ZIP
       # ==========================================================
       - name: 🗜️ Run Ripo ZIP Pack
         if: |
@@ -157,46 +137,37 @@ jobs:
           fi
 
       # ==========================================================
-      # 4. TASK: VIP Report Only
+      # 3. TASK: VIP Report (From system_service)
       # ==========================================================
-      - name: 📋 Generate Code Report Only
+      - name: 📋 Generate VIP Report
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'report_only'
-        env:
-          REPORT_FILE: 'production_report.txt'
-          SCAN_ROOT: '.'
         run: |
           set -euo pipefail
-          GEN=$(find Firent/service_api/utils -type f -name "Txt ripo generator.py" | head -n1)
-          [ -n "$GEN" ] || { echo "❌ generator not found"; exit 1; }
-          python "$GEN"
-
-          TXT=$(find . -maxdepth 3 -name "production_report.txt" | head -n1)
-          [ -n "$TXT" ] || { echo "❌ no report generated"; exit 1; }
-          curl -sS --fail-with-body --retry 5 --retry-all-errors \
-            -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
-            -F "document=@$TXT" \
-            -F "caption=📂 [PRODUCTION] VIP Report" \
-            "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
-          
-          echo "SYS_REPORT_STATUS=✅ Sent" >> $GITHUB_ENV
+          FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"
+          if [ -f "$FILE" ]; then
+            echo "✅ Running VIP Generator: $FILE"
+            python3 "$FILE"
+            echo "SYS_REPORT_STATUS=✅ Sent" >> $GITHUB_ENV
+          else
+            echo "❌ VIP Generator not found at $FILE"
+            exit 1
+          fi
 
       # ==========================================================
-      # 5. TASK: AI Tests
+      # 4. TASK: AI Tests
       # ==========================================================
       - name: 🚀 Run AI Tests / Master Runner
         if: |
           github.event.inputs.task != 'Git Clean' &&
-          github.event.inputs.task != 'Ripo TXT' &&
           github.event.inputs.task != 'Ripo ZIP' &&
           github.event.inputs.task != 'report_only'
         working-directory: Firent/service_api
         env:
           TARGET: ${{ github.event.inputs.task }}
-          # 🔥 Status variables pass karna tests ko
           SYS_CLEAN_STATUS: ${{ env.SYS_CLEAN_STATUS }}
-          SYS_TXT_STATUS: ${{ env.SYS_TXT_STATUS }}
+          SYS_TXT_STATUS: ${{ env.SYS_REPORT_STATUS }}
           SYS_ZIP_STATUS: ${{ env.SYS_ZIP_STATUS }}
         run: |
           set -euo pipefail
