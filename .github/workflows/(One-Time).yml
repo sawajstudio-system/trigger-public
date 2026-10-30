@@ -1,0 +1,67 @@
+name:  (One-Time)
+
+on:
+  workflow_dispatch: # Sirf manual chalega
+
+jobs:
+  copy-api-folder:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: 1. Public Repo (Firent) Checkout Karein
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 2. Private Repo (Backend) se API Folder Checkout Karein
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          # Sirf API folder uthane ke liye sparse-checkout use kar rahe hain
+          sparse-checkout: 'API'
+
+      - name: 3. API Folder ko Firent mein Copy Karein
+        run: |
+          echo "API folder copy kiya ja raha hai..."
+          # Backend/API ko Firent ke root mein copy kar rahe hain
+          cp -r Backend/API Firent/
+          
+          echo "Copy ho gaya. Check kar rahe hain:"
+          ls -la Firent/API/
+
+      - name: 4. Branch Banayein aur Push Karein
+        run: |
+          cd Firent
+          
+          # Git config set karein
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          
+          # Naya branch banayein
+          git checkout -b add-api-folder-from-backend
+          
+          # Files add karein
+          git add API/
+          
+          # Commit karein
+          git commit -m "Add API folder from private Backend repo (One-time)"
+          
+          # Push karein
+          git push origin add-api-folder-from-backend
+
+      - name: 5. Pull Request Banayein
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+        run: |
+          cd Firent
+          gh pr create \
+            --title "🚀 Add API Folder from Private Backend" \
+            --body "Yeh API folder automatically private Backend repo se copy kiya gaya hai. Isko merge karne ke baad folder aapke Firent repo mein aa jayega." \
+            --base main \
+            --head add-api-folder-from-backend
