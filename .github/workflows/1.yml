@@ -1,0 +1,58 @@
+name: One-Time System Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Create New Folders
+        run: |
+          mkdir -p system_service/TG_report
+
+      - name: 3. Move System Files
+        run: |
+          # Move Cleaner
+          if [ -f "Firent/Git/Git_clean/cleanup.py" ]; then
+            mv "Firent/Git/Git_clean/cleanup.py" "system_service/cleanup.py"
+          elif [ -f "Git/Git_clean/cleanup.py" ]; then
+            mv "Git/Git_clean/cleanup.py" "system_service/cleanup.py"
+          fi
+
+          # Move TG Report Files
+          if [ -d "Firent/Git/TG_report" ]; then
+            mv Firent/Git/TG_report/* system_service/TG_report/
+          elif [ -d "Git/TG_report" ]; then
+            mv Git/TG_report/* system_service/TG_report/
+          fi
+
+      - name: 4. Delete Duplicates & Old Folders
+        run: |
+          # Delete extra run_my_tests.py
+          rm -f "Firent/service_api/run_my_tests.py"
+          rm -f "service_api/run_my_tests.py"
+
+          # Delete old Git folders
+          rm -rf "Firent/Git"
+          rm -rf "Git"
+
+          # Delete old TG yml if exists
+          rm -f "Firent/.github/workflows/📝_TG.yml"
+          rm -f "Firent/.github/workflows/One-Time.yml"
+          rm -f "Firent/.github/workflows/master.yml"
+
+      - name: 5. Commit and Push Changes
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "actions@github.com"
+          
+          git add .
+          git commit -m "Auto-Setup: Restructured folders & cleaned duplicates" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref_name }}
