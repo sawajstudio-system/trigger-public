@@ -1,10 +1,10 @@
-name: Final Safe Fixer & Master Setup
+name: 1Time Setup
 
 on:
   workflow_dispatch:
 
 jobs:
-  cleanup:
+  run_setup:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -16,92 +16,22 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Delete Old Duplicates
+      - name: 2. Run 1time.py
         run: |
-          echo "🗑️ Deleting old files..."
-          rm -f "Firent/service_api/utils/Txt ripo generator.py"
-          rm -f "Firent/service_api/utils/github_03_token_test.py"
-          rm -f "Firent/.github/workflows/One-Time File.yml"
-          rm -f "Firent/.github/workflows/One-Time.yml"
-          echo "✅ Old files removed."
+          if [ -f "1time.py" ]; then
+            python 1time.py
+          else
+            echo "❌ 1time.py not found in root!"
+            exit 1
+          fi
 
-      - name: 3. Create VIP Generator Safely
+      - name: 3. Delete Setup Files & Commit
         run: |
-          echo "📦 Creating VIP Generator safely..."
-          mkdir -p "Firent/system_service/TG_report"
+          rm -f 1time.py
+          rm -f .github/workflows/1time.yml
           
-          cat << 'ENDOFCODE' > "Firent/system_service/TG_report/Ripo_txt_tg.py"
-import os
-import sys
-import requests
-
-OUTPUT_FILE = "production_report.txt"
-TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".css", ".js", ".sh"}
-SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
-
-files = []
-for repo in ["Firent", "Backend"]:
-    if os.path.isdir(repo):
-        for root, dirs, fs in os.walk(repo):
-            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-            for f in fs:
-                p = os.path.join(root, f)
-                if os.path.splitext(p)[1].lower() in TEXT_EXTS:
-                    files.append((os.path.normpath(p), p))
-
-with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-    f.write("👑 VIP PRODUCTION REPORT\n\n")
-    for _, p in files:
-        try:
-            f.write(f"\n{'='*60}\nFILE: {p}\n{'='*60}\n")
-            with open(p, "r", encoding="utf-8", errors="ignore") as src:
-                f.write(src.read())
-        except Exception as e:
-            print(f"Skipping {p}: {e}")
-
-t = os.environ.get("BOT_TOKEN")
-c = os.environ.get("CHAT_ID")
-if t and c:
-    try:
-        with open(OUTPUT_FILE, "rb") as doc:
-            requests.post(
-                f"https://api.telegram.org/bot{t}/sendDocument",
-                data={"chat_id": c, "caption": "👑 VIP Production Report"},
-                files={"document": doc}
-            )
-        print("✅ Report sent to Telegram successfully.")
-    except Exception as e:
-        print(f"⚠️ Failed to send to Telegram: {e}")
-else:
-    print("⚠️ BOT_TOKEN or CHAT_ID not set, skipping Telegram upload.")
-ENDOFCODE
-          echo "✅ File generated perfectly."
-
-      - name: 4. Update Path in Workflow
-        run: |
-          echo "📝 Updating paths in workflow files..."
-          python3 -c "
-import glob
-for f in glob.glob('Firent/.github/workflows/*.yml'):
-    if 'universal_master' in f or 'One-Time' in f:
-        print(f'Checking: {f}')
-        with open(f, 'r', encoding='utf-8') as file:
-            content = file.read()
-        
-        # Safe replacement
-        updated = content.replace('FILE=\"Firent/Ripo_txt_tg.py\"', 'FILE=\"Firent/system_service/TG_report/Ripo_txt_tg.py\"')
-        if content != updated:
-            with open(f, 'w', encoding='utf-8') as file:
-                file.write(updated)
-            print(f'✅ Updated path in {f}')
-"
-          echo "✅ Path update check complete."
-
-      - name: 5. Commit and Push Safely
-        run: |
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
-          git pull origin ${{ github.ref_name }} --rebase || echo "No remote changes to pull"
           git add .
-          git commit -m "Final Fix: Upgraded script writing mechanism and path updates" || echo "No changes"
+          git commit -m "Auto-Fix: Applied 1time.py setup, deleted duplicates, and cleaned up workflows" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
