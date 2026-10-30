@@ -15,6 +15,8 @@ def run_test():
         send_telegram_message("❌ <b>[PRODUCTION]</b> Missing Telegram credentials.")
         sys.exit(1)
 
+    success_count = 0
+
     # ==========================================
     # 1. IMAGE GENERATION
     # ==========================================
@@ -40,6 +42,7 @@ def run_test():
                 }
                 requests.post(url, data=payload, files={"photo": photo})
                 print("✅ Image sent successfully!")
+                success_count += 1
         else:
             print(f"❌ Image generation failed. HTTP {img_res.status_code}")
     except Exception as e:
@@ -70,10 +73,17 @@ def run_test():
                 }
                 requests.post(url, data=payload, files={"audio": audio})
                 print("✅ Audio sent successfully!")
+                success_count += 1
         else:
             print(f"❌ Audio generation failed. HTTP {audio_res.status_code}")
     except Exception as e:
-        print(f"❌ Audio Error: {e}")
+        print(f"⚠️ Audio Server Error (Bypassed): {e}")
+
+    # Agar image aur audio dono fail ho jayein tabhi test fail karo
+    if success_count == 0:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 if __name__ == "__main__":
     run_test()
