@@ -26,7 +26,7 @@ jobs:
         run: |
           echo "📝 Writing new VIP Report Generator in system_service..."
           mkdir -p "Firent/system_service/TG_report"
-          cat > "Firent/system_service/TG_report/Ripo_txt_tg.py" << 'ENDOFCODE'
+          cat << 'ENDOFCODE' > "Firent/system_service/TG_report/Ripo_txt_tg.py"
 # Ripo_txt_tg.py - VIP Production Generator
 import os
 import sys
@@ -36,7 +36,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from TG_sender import send_document, build_caption
 except ImportError:
-    # Fallback dummy functions if TG_sender is missing during test runs
     def send_document(*args, **kwargs): print("⚠️ TG_sender not found, skipping send.")
     def build_caption(*args): return "VIP Production Report"
 
@@ -118,7 +117,6 @@ ENDOFCODE
         run: |
           echo "📝 Updating workflow references..."
           YML_FILE="Firent/.github/workflows/universal_master.yml"
-          
           if [ -f "$YML_FILE" ]; then
             sed -i 's|GEN=$(find Firent/service_api/utils -type f -name "Txt ripo generator.py" | head -n1)|GEN=$(find Firent/system_service/TG_report -name "Ripo_txt_tg.py" | head -n1)|' "$YML_FILE" || true
             echo "✅ YML updated successfully."
