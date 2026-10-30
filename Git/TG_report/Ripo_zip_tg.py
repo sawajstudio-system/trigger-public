@@ -2,8 +2,8 @@
 Ripo_zip_tg.py
 ================
 - Dono repos ki saari NON-TEXT files → ignored_files.zip
-- TXT wali files yahan NAHI aayengi (complementary)
-- Telegram par bhejta hai
+- Agar koi non-text file na mile → Telegram par message bhejta hai
+- Telegram par ZIP bhejta hai (agar bane)
 
 Standalone run:
     python Ripo_zip_tg.py
@@ -15,10 +15,10 @@ import zipfile
 import traceback
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from TG_sender import send_document, build_caption  # noqa: E402
+from TG_sender import send_document, build_caption, send_message  # noqa: E402
 
 # ============================================================
-# CONFIG — TXT wale se EXACT match karna chahiye
+# CONFIG — TXT wale se EXACT match
 # ============================================================
 OUTPUT_ZIP = "ignored_files.zip"
 REPOS = ["Firent", "Backend"]
@@ -60,7 +60,6 @@ def is_text_file(filepath: str) -> bool:
 
 
 def classify(file_path: str) -> str:
-    """TXT wale se EXACT same logic."""
     filename = os.path.basename(file_path)
     parts = file_path.split(os.sep)
 
@@ -84,6 +83,7 @@ def build_zip() -> tuple:
     log("=" * 60)
 
     file_count = 0
+    found_files = []  # Debug ke liye
 
     with zipfile.ZipFile(OUTPUT_ZIP, "w", zipfile.ZIP_DEFLATED) as zipf:
         for repo in REPOS:
@@ -107,6 +107,8 @@ def build_zip() -> tuple:
                         zipf.write(file_path, arcname=file_path)
                         file_count += 1
                         repo_count += 1
+                        found_files.append(file_path)
+                        log(f"   📦 Packed: {file_path}")
                     except Exception as e:
                         log(f"   ⚠️  ZIP error: {file_path} → {e}")
 
@@ -128,11 +130,45 @@ def main() -> int:
     try:
         zip_path, count, size_mb = build_zip()
 
+        # ============================================================
+        # CASE 1: Koi file nahi mili → message bhejo
+        # ============================================================
         if count == 0:
-            log("⚠️  Koi non-text file nahi mili. ZIP nahi bhejenge.")
+            log("\n⚠️  Koi non-text file nahi mili.")
+            log("📤 Telegram par message bheja ja raha hai (ZIP nahi banegi)...")
+
+            actor = os.environ.get("GITHUB_ACTOR", "unknown")
+            message = (
+                f"🗜️ ZIP Report\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"❌ Koi non-text file nahi mili.\n\n"
+                f"Dono repos (Firent + Backend) mein\n"
+                f"images, PDFs, exe, videos, fonts, etc.\n"
+                f"kuch bhi nahi tha jo ZIP mein daal sakein.\n\n"
+                f"ℹ️ Saara code combined_code.txt mein hai.\n\n"
+                f"👤 Manual run: {actor}"
+            )
+
+            ok = send_message(
+                token=os.environ.get("BOT_TOKEN"),
+                chat_id=os.environ.get("CHAT_ID"),
+                text=message,
+            )
+
+            if ok:
+                log("✅ Message sent successfully!")
+            else:
+                log("❌ Message send fail ho gaya.")
+
+            # Fail nahi karenge — exit 0
             return 0
 
-        log("\n📤 Telegram par ZIP bheja ja raha hai...")
+        # ============================================================
+        # CASE 2: Files mili → ZIP bhejo
+        # ============================================================
+        log(f"\n📤 Telegram par ZIP bheja ja raha hai...")
+        log(f"   (Total {count} files packed)")
+
         caption = build_caption("🗜️  Ignored Files (ZIP)", count, size_mb)
 
         ok = send_document(
