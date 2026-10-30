@@ -95,33 +95,33 @@ jobs:
       # TASK: Git Clean
       # ==========================================================
       - name: 🧹 Run Git Cleanup
-        if: ${{ inputs.task == 'Git Clean' }}
+        if: inputs.task == 'Git Clean'
         env:
           GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
           REPO: ${{ github.repository }}
           CURRENT_RUN_ID: ${{ github.run_id }}
           MAX_RUNS: '500'
-        run: python3 Firent/Git/Git_clean/cleanup.py[span_4](start_span)[span_4](end_span)
+        run: python3 Firent/Git/Git_clean/cleanup.py[span_2](start_span)[span_2](end_span)
 
       # ==========================================================
       # TASK: Ripo TXT
       # ==========================================================
       - name: 📄 Run Ripo TXT Generator & Sender
-        if: ${{ inputs.task == 'Ripo TXT' }}
-        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py[span_5](start_span)[span_5](end_span)
+        if: inputs.task == 'Ripo TXT'
+        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py[span_3](start_span)[span_3](end_span)
 
       # ==========================================================
       # TASK: Ripo ZIP
       # ==========================================================
       - name: 🗜️ Run Ripo ZIP Pack & Sender
-        if: ${{ inputs.task == 'Ripo ZIP' }}
-        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py[span_6](start_span)[span_6](end_span)
+        if: inputs.task == 'Ripo ZIP'
+        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py[span_4](start_span)[span_4](end_span)
 
       # ==========================================================
       # TASK: Report Only
       # ==========================================================
       - name: 📋 Generate Code Report Only
-        if: ${{ inputs.task == 'report_only' }}
+        if: inputs.task == 'report_only'
         run: |
           python "Firent/service_api/utils/Txt ripo generator.py"
           for file in *.txt; do
@@ -136,14 +136,14 @@ jobs:
       # TASK: AI Tests & Runners (All or Specific Test)
       # ==========================================================
       - name: 🚀 Run AI Tests / Master Runner
-        if: ${{ inputs.task != 'Git Clean' && inputs.task != 'Ripo TXT' && inputs.task != 'Ripo ZIP' && inputs.task != 'report_only' }}
+        if: inputs.task != 'Git Clean' && inputs.task != 'Ripo TXT' && inputs.task != 'Ripo ZIP' && inputs.task != 'report_only'
         working-directory: Firent/service_api
         env:
           TARGET: ${{ github.event.inputs.task }}
         run: |
           if [ "$TARGET" = "all" ]; then
             echo "🚀 Running master test runner recursively across all subfolders..."
-            python run_all_tests.py[span_7](start_span)[span_7](end_span)
+            python run_all_tests.py[span_5](start_span)[span_5](end_span)
           else
             FILE=$(find . -name "*${TARGET}*.py" | head -n 1)
             if [ -z "$FILE" ]; then
