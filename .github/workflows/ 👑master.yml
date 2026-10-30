@@ -1,4 +1,4 @@
-name: 👑 VIP Master Hub & Operations
+name: 👑master
 
 on:
   workflow_dispatch:
@@ -39,13 +39,15 @@ concurrency:
 jobs:
   master_execution:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     permissions:
       actions: write
       contents: read
 
     env:
       REPORT_FILE: 'production_report'
+      BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
       TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
       TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
       TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
@@ -99,21 +101,21 @@ jobs:
           REPO: ${{ github.repository }}
           CURRENT_RUN_ID: ${{ github.run_id }}
           MAX_RUNS: '500'
-        run: python3 Firent/Git/Git_clean/cleanup.py
+        run: python3 Firent/Git/Git_clean/cleanup.py[span_2](start_span)[span_2](end_span)
 
       # ==========================================================
       # TASK: Ripo TXT
       # ==========================================================
       - name: 📄 Run Ripo TXT Generator & Sender
         if: ${{ inputs.task == 'Ripo TXT' }}
-        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py
+        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py[span_3](start_span)[span_3](end_span)
 
       # ==========================================================
       # TASK: Ripo ZIP
       # ==========================================================
       - name: 🗜️ Run Ripo ZIP Pack & Sender
         if: ${{ inputs.task == 'Ripo ZIP' }}
-        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py
+        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py[span_4](start_span)[span_4](end_span)
 
       # ==========================================================
       # TASK: Report Only
@@ -131,7 +133,7 @@ jobs:
           done
 
       # ==========================================================
-      # TASK: AI Tests & Runners (All or Specific)
+      # TASK: AI Tests & Runners (All or Specific Test)
       # ==========================================================
       - name: 🚀 Run AI Tests / Master Runner
         if: ${{ inputs.task != 'Git Clean' && inputs.task != 'Ripo TXT' && inputs.task != 'Ripo ZIP' && inputs.task != 'report_only' }}
@@ -140,10 +142,9 @@ jobs:
           TARGET: ${{ github.event.inputs.task }}
         run: |
           if [ "$TARGET" == "all" ]; then
-            echo "🚀 Running master test runner recursively..."
-            python run_all_tests.py
+            echo "🚀 Running master test runner recursively across all subfolders..."
+            python run_all_tests.py[span_5](start_span)[span_5](end_span)
           else
-            # Smart search inside any subfolder of service_api
             FILE=$(find . -name "*${TARGET}*.py" | head -n 1)
             if [ -z "$FILE" ]; then
               echo "❌ Error: '$TARGET' naam ki koi test file nahi mili!"
