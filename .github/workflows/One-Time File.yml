@@ -1,4 +1,4 @@
-name: 1Time Setup
+name: 1Time Fixer
 
 on:
   workflow_dispatch:
@@ -18,12 +18,7 @@ jobs:
 
       - name: 2. Run 1time.py
         run: |
-          if [ -f "1time.py" ]; then
-            python 1time.py
-          else
-            echo "❌ 1time.py not found in root!"
-            exit 1
-          fi
+          python 1time.py
 
       - name: 3. Delete Setup Files & Commit
         run: |
@@ -33,5 +28,5 @@ jobs:
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto-Fix: Applied 1time.py setup, deleted duplicates, and cleaned up workflows" || echo "No changes"
+          git commit -m "Auto-Fix: Fixed Paths and removed duplicates" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
