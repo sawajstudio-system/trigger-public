@@ -1,7 +1,6 @@
-name: 📝Send_ripo_TG_txt_zip.yml
-
+name: Send_ripo_TG_txt_zip
 on:
-  workflow_dispatch:
+  workflow_dispatch:        # ← SIRF MANUAL
 
 concurrency:
   group: telegram-sender-${{ github.ref }}
