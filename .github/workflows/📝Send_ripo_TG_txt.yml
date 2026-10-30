@@ -1,4 +1,4 @@
-name: Send_ripo_TG_txt
+name: 📝Send_ripo_TG_txt
 
 on:
   workflow_dispatch:
