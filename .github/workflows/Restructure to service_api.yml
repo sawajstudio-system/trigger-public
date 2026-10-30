@@ -1,0 +1,128 @@
+name: Restructure to service_api
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restructure:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GITHUB }}
+          persist-credentials: true
+
+      - name: 2. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 3. Run Python Restructure Script
+        run: |
+          python - << 'EOF'
+          import os
+          import shutil
+
+          file_mapping = {
+              "service_api/ai_models": [
+                  "gemini_04_test.py",
+                  "groq_06_test.py",
+                  "cohere_09_test.py",
+                  "nvidia_07_test.py",
+                  "openrouter_05_test.py",
+                  "cloudflare_08_test.py",
+                  "magic_14_test.py",
+                  "anges_15_test.py",
+                  "tanvo_17_test.py"
+              ],
+              "service_api/video_services": [
+                  "coverr_13_test.py",
+                  "pexels_12_test.py",
+                  "pixabay_11_test.py",
+                  "media_10_test.py"
+              ],
+              "service_api/audio_media": [
+                  "cloudinary_16_test.py"
+              ],
+              "service_api/integrations": [
+                  "telegram_01_helper.py",
+                  "telegram_02_bot_test.py"
+              ],
+              "service_api/utils": [
+                  "Txt ripo generator.py",
+                  "github_03_token_test.py"
+              ]
+          }
+
+          # 1. Folders create karein
+          for folder in file_mapping.keys():
+              os.makedirs(folder, exist_ok=True)
+              init_file = os.path.join(folder, "__init__.py")
+              if not os.path.exists(init_file):
+                  open(init_file, "w").close()
+
+          # 2. Files move karein aur imports fix karein
+          for folder, files in file_mapping.items():
+              for file in files:
+                  actual_src = None
+                  for root_dir, dirs, filenames in os.walk("."):
+                      if ".git" in root_dir or "Git" in root_dir or ".github" in root_dir:
+                          continue
+                      if file in filenames:
+                        actual_src = os.path.join(root_dir, file)
+                        break
+
+                  if actual_src and os.path.exists(actual_src):
+                      dest = os.path.join(folder, file)
+                      if os.path.abspath(actual_src) != os.path.abspath(dest):
+                          shutil.move(actual_src, dest)
+                      
+                      # Fix import statements
+                      if folder.startswith("service_api/") and folder != "service_api/integrations" and file.endswith(".py"):
+                          with open(dest, "r", encoding="utf-8") as f:
+                              content = f.read()
+                          if "from telegram_01_helper import" in content:
+                              content = content.replace(
+                                  "from telegram_01_helper import", 
+                                  "from service_api.integrations.telegram_01_helper import"
+                              )
+                              with open(dest, "w", encoding="utf-8") as f:
+                                  f.write(content)
+
+          # 3. Test runners ko service_api ke andar move karein
+          for runner in ["run_all_tests.py", "run_my_tests.py"]:
+              runner_src = None
+              for root_dir, dirs, filenames in os.walk("."):
+                  if ".git" in root_dir or ".github" in root_dir:
+                      continue
+                  if runner in filenames:
+                      runner_src = os.path.join(root_dir, runner)
+                      break
+              if runner_src and os.path.exists(runner_src):
+                  dest_runner = os.path.join("service_api", runner)
+                  if os.path.abspath(runner_src) != os.path.abspath(dest_runner):
+                      shutil.move(runner_src, dest_runner)
+
+          # 4. Purane khali folders hata dein
+          for old_dir in ["API", "api", "services"]:
+              if os.path.exists(old_dir) and os.path.isdir(old_dir):
+                  try:
+                      shutil.rmtree(old_dir)
+                  except:
+                      pass
+
+          print("Successfully restructured into service_api!")
+          EOF
+
+      - name: 4. Commit and Push Changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add .
+          git status
+          git diff --staged --quiet || git commit -m "✨ Move all files and scripts into service_api directory"
+          git push origin main
