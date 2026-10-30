@@ -9,29 +9,43 @@ def send_final_report(passed, failed):
     chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
     if not token or not chat_id: return
 
-    msg = "👑 <b>[VIP PRODUCTION] FINAL TEST REPORT</b> 👑\n"
+    # 🔥 System Status Env Variables se uthayenge (jo YML se pass honge)
+    sys_clean = os.getenv("SYS_CLEAN_STATUS", "❓ Not Run")
+    sys_txt = os.getenv("SYS_TXT_STATUS", "❓ Not Run")
+    sys_zip = os.getenv("SYS_ZIP_STATUS", "❓ Not Run")
+
+    msg = "👑 <b>[VIP PRODUCTION] FINAL REPORT</b> 👑\n"
     msg += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     
+    # 🛠️ SYSTEM STATUS SECTION
+    msg += "🛠️ <b>SYSTEM TASKS:</b>\n"
+    msg += f"  🧹 <b>Cleaner:</b> {sys_clean}\n"
+    msg += f"  📄 <b>TXT File:</b> {sys_txt}\n"
+    msg += f"  🗜️ <b>ZIP File:</b> {sys_zip}\n"
+    msg += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
+    # 🧪 TEST STATUS SECTION
+    msg += "🧪 <b>TEST RESULTS:</b>\n"
     if passed:
-        msg += "✅ <b>PASSED:</b>\n"
+        msg += "  ✅ <b>PASSED:</b>\n"
         for p in passed:
             test_name = os.path.basename(p).replace('_test.py', '').replace('.py', '')
-            msg += f"  ✔️ <code>{test_name}</code>\n"
+            msg += f"    ✔️ <code>{test_name}</code>\n"
             
     if failed:
-        msg += "\n❌ <b>FAILED:</b>\n"
+        msg += "\n  ❌ <b>FAILED:</b>\n"
         for f in failed:
             test_name = os.path.basename(f).replace('_test.py', '').replace('.py', '')
-            msg += f"  ❌ <code>{test_name}</code>\n"
+            msg += f"    ❌ <code>{test_name}</code>\n"
             
     msg += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     msg += f"📊 <b>TOTAL:</b> {len(passed) + len(failed)} | ✅ {len(passed)} | ❌ {len(failed)}"
     
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     try:
-        requests.post(url, json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
-    except:
-        pass
+        requests.post(url, json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"}, timeout=15)
+    except Exception as e:
+        print(f"❌ Report send failed: {e}")
 
 def run_all():
     print("🚀 [VIP SYSTEM] Auto-running all tests recursively from subfolders...")
@@ -65,6 +79,7 @@ def run_all():
             failed_tests.append(test_file)
             print(f"❌ FAILED: {test_file}")
 
+    # Telegram par bhejna
     send_final_report(passed_tests, failed_tests)
 
     print("\n" + "="*40)
@@ -76,4 +91,3 @@ def run_all():
 
 if __name__ == "__main__":
     run_all()
-    
