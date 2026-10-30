@@ -9,7 +9,7 @@ def send_final_report(passed, failed):
     chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
     if not token or not chat_id: return
 
-    # 🔥 System Status Env Variables se uthayenge (jo YML se pass honge)
+    # 🔥 System Status variables uthana
     sys_clean = os.getenv("SYS_CLEAN_STATUS", "❓ Not Run")
     sys_txt = os.getenv("SYS_TXT_STATUS", "❓ Not Run")
     sys_zip = os.getenv("SYS_ZIP_STATUS", "❓ Not Run")
@@ -48,10 +48,9 @@ def send_final_report(passed, failed):
         print(f"❌ Report send failed: {e}")
 
 def run_all():
-    print("🚀 [VIP SYSTEM] Auto-running all tests recursively from subfolders...")
+    print("🚀 [VIP SYSTEM] Auto-running all tests recursively...")
     
     test_files = sorted(glob.glob("**/*_test.py", recursive=True))
-    
     if os.path.exists("image_creator.py"):
         test_files.append("image_creator.py")
 
@@ -79,7 +78,6 @@ def run_all():
             failed_tests.append(test_file)
             print(f"❌ FAILED: {test_file}")
 
-    # Telegram par bhejna
     send_final_report(passed_tests, failed_tests)
 
     print("\n" + "="*40)
