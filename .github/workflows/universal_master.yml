@@ -1,4 +1,4 @@
-name: universal_master
+name: Universal Master
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ concurrency:
 jobs:
   master_execution:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     permissions:
       actions: write
       contents: read
@@ -87,10 +87,6 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           continue-on-error: true
 
-      # ==========================================================
-      # FIXED: Python setup step
-      # - Removed `cache: 'pip'` to avoid "No file in ... matched to requirements.txt" error.
-      # ==========================================================
       - name: 3. Set up Python
         uses: actions/setup-python@v5
         with:
@@ -103,25 +99,12 @@ jobs:
           pip install pytest || true
 
       # ==========================================================
-      # DIAGNOSTIC
-      # ==========================================================
-      - name: 5. Diagnostic — Repo Layout
-        run: |
-          echo "::group::Workspace"; ls -la; echo "::endgroup::"
-          echo "::group::Firent"; ls -la Firent/ || echo "Firent missing!"; echo "::endgroup::"
-          echo "::group::Firent/service_api"; ls -la Firent/service_api/ || echo "service_api missing!"; echo "::endgroup::"
-          echo "::group::Test files found"
-          find Firent/service_api -type f -name "*_test.py" | sort || true
-          echo "::endgroup::"
-          echo "::group::runners"
-          find Firent -maxdepth 3 -name "run_*tests.py" -print || true
-          echo "::endgroup::"
-
-      # ==========================================================
-      # TASK: Git Clean
+      # 1. TASK: Git Clean (Runs on 'all' OR 'Git Clean')
       # ==========================================================
       - name: 🧹 Run Git Cleanup
-        if: github.event.inputs.task == 'Git Clean'
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'Git Clean'
         env:
           REPO: ${{ github.repository }}
           CURRENT_RUN_ID: ${{ github.run_id }}
@@ -134,10 +117,12 @@ jobs:
           python3 "$FILE"
 
       # ==========================================================
-      # TASK: Ripo TXT
+      # 2. TASK: Ripo TXT (Runs on 'all' OR 'Ripo TXT')
       # ==========================================================
       - name: 📄 Run Ripo TXT Generator & Sender
-        if: github.event.inputs.task == 'Ripo TXT'
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'Ripo TXT'
         run: |
           set -euo pipefail
           FILE=$(find Firent -maxdepth 5 -name "Ripo_txt_tg.py" | head -n1)
@@ -146,10 +131,12 @@ jobs:
           python3 "$FILE"
 
       # ==========================================================
-      # TASK: Ripo ZIP
+      # 3. TASK: Ripo ZIP (Runs on 'all' OR 'Ripo ZIP')
       # ==========================================================
       - name: 🗜️ Run Ripo ZIP Pack & Sender
-        if: github.event.inputs.task == 'Ripo ZIP'
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'Ripo ZIP'
         run: |
           set -euo pipefail
           FILE=$(find Firent -maxdepth 5 -name "Ripo_zip_tg.py" | head -n1)
@@ -158,10 +145,12 @@ jobs:
           python3 "$FILE"
 
       # ==========================================================
-      # TASK: Report Only
+      # 4. TASK: Report Only (Runs on 'all' OR 'report_only')
       # ==========================================================
       - name: 📋 Generate Code Report Only
-        if: github.event.inputs.task == 'report_only'
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'report_only'
         env:
           REPORT_FILE: 'production_report.txt'
           SCAN_ROOT: '.'
@@ -182,7 +171,7 @@ jobs:
             "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
 
       # ==========================================================
-      # TASK: AI Tests & Runners
+      # 5. TASK: AI Tests & Runners (Runs on 'all' OR specific test)
       # ==========================================================
       - name: 🚀 Run AI Tests / Master Runner
         if: |
@@ -232,7 +221,7 @@ jobs:
           python "$FILE"
 
       # ==========================================================
-      # ARTIFACTS
+      # ARTIFACTS & SUMMARY
       # ==========================================================
       - name: 📦 Upload artifacts
         if: always()
@@ -246,9 +235,6 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      # ==========================================================
-      # SUMMARY
-      # ==========================================================
       - name: 🧾 Job Summary
         if: always()
         run: |
