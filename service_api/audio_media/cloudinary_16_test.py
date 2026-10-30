@@ -3,7 +3,7 @@
 import os
 import sys
 import requests
-from telegram_01_helper import send_telegram_message
+from service_api.integrations.telegram_01_helper import send_telegram_message
 
 def run_test():
     cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME")

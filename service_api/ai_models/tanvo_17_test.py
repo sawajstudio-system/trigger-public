@@ -4,7 +4,7 @@ import os
 import sys
 import time
 import requests
-from telegram_01_helper import send_telegram_message
+from service_api.integrations.telegram_01_helper import send_telegram_message
 
 def run_test():
     api_key = os.getenv("TANVO_API_KEY")

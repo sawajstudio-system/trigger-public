@@ -1,54 +1,60 @@
 # Folder: API
-# File: cohere_09_test.py
+# File: groq_06_test.py
 import os
 import sys
 import requests
-from telegram_01_helper import send_telegram_message
+from service_api.integrations.telegram_01_helper import send_telegram_message
 
 def run_test():
-    api_key = os.getenv("COHERE_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     
     if not api_key:
-        send_telegram_message("❌ <b>[PRODUCTION]</b> Cohere test failed: Secret missing.")
+        send_telegram_message("❌ <b>[PRODUCTION]</b> Groq test failed: Secret missing.")
         sys.exit(1)
 
-    api_url = "https://api.cohere.com/v1/chat"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    # Naye active models ki list
+    # Naye aur stable Groq models ki list
     models_to_test = [
-        "command-r-plus-08-2024",
-        "command-r-08-2024",
-        "command-light"
+        "openai/gpt-oss-120b",    # Sabse bada aur smart (Primary)
+        "openai/gpt-oss-20b",     # Agar bada fail ho jaye toh backup
+        "llama3-70b-8192",        # Backup (agar available ho)
+        "llama3-8b-8192"          # Sabse fast backup
     ]
 
     success_model = None
     ai_reply = None
     failed_models = []
+    
+    api_url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
 
-    print("🚀 Starting Cohere AI Testing...")
+    print("🚀 Starting Groq AI Model Testing...")
 
+    # 1. LOOP: Ek-ek karke saare models test honge
     for model in models_to_test:
         print(f"⏳ Testing Model: {model}...")
         
         payload = {
             "model": model,
-            "message": "Say exactly: 'Cohere is free and working!'",
-            "max_tokens": 50
+            "messages": [{
+                "role": "user", 
+                "content": "Reply with exactly this phrase: 'Groq is super fast and free!'"
+            }],
+            "max_tokens": 200,      # Tokens badha diye taaki reply pura aaye
+            "temperature": 0.5      # Thoda creative but focused
         }
 
         try:
-            res = requests.post(api_url, headers=headers, json=payload, timeout=20)
+            res = requests.post(api_url, headers=headers, json=payload, timeout=15)
             
             if res.status_code == 200:
                 data = res.json()
-                ai_reply = data.get("text", "No reply")
+                ai_reply = data['choices'][0]['message']['content'].strip()
                 success_model = model
                 print(f"✅ Success with {model}!")
-                break
+                break  # Model pass hua, loop se bahar
             else:
                 print(f"❌ Failed {model}: HTTP {res.status_code}")
                 failed_models.append(f"{model} (HTTP {res.status_code})")
@@ -57,10 +63,11 @@ def run_test():
             print(f"❌ Error with {model}: {str(e)}")
             failed_models.append(f"{model} (Error)")
 
-    # Result Telegram par bhejna
+    # 2. RESULT BHEJNA
     if success_model:
+        # Agar koi model pass hua
         message = (
-            "🇨🇦 <b>[VIP PRODUCTION] COHERE AI REPORT</b> 🇨🇦\n"
+            "⚡ <b>[VIP PRODUCTION] GROQ AI REPORT</b> ⚡\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             "🟢 <b>STATUS:</b> <code>PASSED</code>\n"
             f"🏆 <b>WINNING MODEL:</b> <code>{success_model}</code>\n"
@@ -68,18 +75,19 @@ def run_test():
             f"💬 <b>AI REPLY:</b>\n<i>{ai_reply}</i>\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"⚠️ <b>Failed Models:</b> <code>{len(failed_models)}</code>\n"
-            "🚀 <i>Cohere is connected!</i>"
+            "🚀 <i>Groq is connected and working without a card!</i>"
         )
         send_telegram_message(message)
         sys.exit(0)
     else:
+        # Agar saare models fail ho gaye
         message = (
-            "❌ <b>[PRODUCTION] COHERE AI FAILED</b> ❌\n"
+            "❌ <b>[PRODUCTION] GROQ AI FAILED</b> ❌\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             "🔴 <b>STATUS:</b> <code>ALL MODELS FAILED</code>\n"
-            "⚠️ <b>Reason:</b> API Key might be invalid or rate limit.\n"
+            "⚠️ <b>Reason:</b> API Key might be invalid or limit exceeded.\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "🛠️ <i>Please check your COHERE_API_KEY.</i>"
+            "🛠️ <i>Please check your GROQ_API_KEY in GitHub Secrets.</i>"
         )
         send_telegram_message(message)
         sys.exit(1)
