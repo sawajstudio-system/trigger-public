@@ -14,7 +14,6 @@ on:
           - 'Ripo TXT'
           - 'Ripo ZIP'
           - 'report_only'
-          - 'image_creator'
           - 'cloudinary_16_test'
           - 'tanvo_17_test'
           - 'magic_14_test'
@@ -70,11 +69,9 @@ jobs:
       TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
       PYTHONUNBUFFERED: '1'
       PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: 'Firent/service_api:Firent/service_api/integrations'
 
     steps:
-      # ==========================================================
-      # CHECKOUTS
-      # ==========================================================
       - name: 1. Checkout Firent Repo
         uses: actions/checkout@v4
         with:
@@ -103,24 +100,18 @@ jobs:
           pip install pytest || true
 
       # ==========================================================
-      # DIAGNOSTIC (always runs, prints environment truth)
+      # DIAGNOSTIC
       # ==========================================================
       - name: 5. Diagnostic — Repo Layout
         run: |
-          echo "::group::Workspace"
-          ls -la
+          echo "::group::Workspace"; ls -la; echo "::endgroup::"
+          echo "::group::Firent"; ls -la Firent/ || echo "Firent missing!"; echo "::endgroup::"
+          echo "::group::Firent/service_api"; ls -la Firent/service_api/ || echo "service_api missing!"; echo "::endgroup::"
+          echo "::group::Test files found"
+          find Firent/service_api -type f -name "*_test.py" | sort || true
           echo "::endgroup::"
-          echo "::group::Firent"
-          ls -la Firent/ || echo "Firent missing!"
-          echo "::endgroup::"
-          echo "::group::Firent/service_api"
-          ls -la Firent/service_api/ || echo "service_api missing!"
-          echo "::endgroup::"
-          echo "::group::run_all_tests.py presence"
-          find Firent -maxdepth 3 -name "run_all_tests.py" -print || true
-          echo "::endgroup::"
-          echo "::group::All test-like python files"
-          find Firent -type f -name "*.py" | grep -iE "test|runner" | sort | head -100 || true
+          echo "::group::runners"
+          find Firent -maxdepth 3 -name "run_*tests.py" -print || true
           echo "::endgroup::"
 
       # ==========================================================
@@ -135,9 +126,7 @@ jobs:
         run: |
           set -euo pipefail
           FILE=$(find Firent -maxdepth 4 -name "cleanup.py" -path "*Git_clean*" | head -n1)
-          if [ -z "$FILE" ]; then
-            echo "❌ cleanup.py not found"; find Firent -name "cleanup*.py"; exit 1
-          fi
+          [ -n "$FILE" ] || { echo "❌ cleanup.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
@@ -149,9 +138,7 @@ jobs:
         run: |
           set -euo pipefail
           FILE=$(find Firent -maxdepth 5 -name "Ripo_txt_tg.py" | head -n1)
-          if [ -z "$FILE" ]; then
-            echo "❌ Ripo_txt_tg.py not found"; find Firent -name "*Ripo*"; exit 1
-          fi
+          [ -n "$FILE" ] || { echo "❌ Ripo_txt_tg.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
@@ -163,9 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           FILE=$(find Firent -maxdepth 5 -name "Ripo_zip_tg.py" | head -n1)
-          if [ -z "$FILE" ]; then
-            echo "❌ Ripo_zip_tg.py not found"; find Firent -name "*Ripo*"; exit 1
-          fi
+          [ -n "$FILE" ] || { echo "❌ Ripo_zip_tg.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
@@ -174,41 +159,30 @@ jobs:
       # ==========================================================
       - name: 📋 Generate Code Report Only
         if: github.event.inputs.task == 'report_only'
+        env:
+          REPORT_FILE: 'production_report.txt'
+          SCAN_ROOT: '.'
         run: |
           set -euo pipefail
           GEN=$(find Firent -maxdepth 6 -type f -name "Txt ripo generator.py" | head -n1)
-          if [ -z "$GEN" ]; then
-            echo "❌ 'Txt ripo generator.py' not found"; find Firent -name "*ripo*generator*"; exit 1
-          fi
-          GEN_DIR=$(dirname "$GEN")
-          echo "✅ Generator: $GEN (cwd: $GEN_DIR)"
+          [ -n "$GEN" ] || { echo "❌ generator not found"; exit 1; }
+          echo "✅ Generator: $GEN"
+          python "$GEN"
 
-          # snapshot .txt files before
-          BEFORE=$(find . -name "*.txt" -newermt '1970-01-01' | sort)
-
-          ( cd "$GEN_DIR" && python "Txt ripo generator.py" )
-
-          shopt -s nullglob
-          FOUND=0
-          # collect new .txt files from generator dir + repo root
-          for file in "$GEN_DIR"/*.txt ./*.txt; do
-            [ -f "$file" ] || continue
-            echo "📤 Uploading: $file"
-            curl -sS --fail-with-body --retry 5 --retry-delay 3 --retry-all-errors \
-              -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
-              -F "document=@$file" \
-              -F "caption=📂 [PRODUCTION] Report: $(basename "$file")" \
-              "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument" \
-              && FOUND=$((FOUND+1)) || echo "⚠️ Upload failed: $file"
-          done
-          echo "✅ Uploaded $FOUND file(s)."
-          [ "$FOUND" -gt 0 ] || { echo "❌ No .txt files produced"; exit 1; }
+          TXT=$(find . -maxdepth 3 -name "production_report.txt" | head -n1)
+          [ -n "$TXT" ] || { echo "❌ no report generated"; exit 1; }
+          echo "📤 Uploading: $TXT"
+          curl -sS --fail-with-body --retry 5 --retry-all-errors \
+            -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
+            -F "document=@$TXT" \
+            -F "caption=📂 [PRODUCTION] Report: $(basename "$TXT")" \
+            "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
 
       # ==========================================================
       # TASK: AI Tests & Runners
       # ==========================================================
       - name: 🚀 Run AI Tests / Master Runner
-        if: >-
+        if: |
           github.event.inputs.task != 'Git Clean' &&
           github.event.inputs.task != 'Ripo TXT' &&
           github.event.inputs.task != 'Ripo ZIP' &&
@@ -220,7 +194,6 @@ jobs:
           set -euo pipefail
           echo "🎯 TARGET=$TARGET"
           echo "📁 CWD=$(pwd)"
-          ls -la
 
           if [ "$TARGET" = "all" ]; then
             if [ -f run_all_tests.py ]; then
@@ -228,26 +201,22 @@ jobs:
               python run_all_tests.py
               exit $?
             fi
-            echo "⚠️ run_all_tests.py missing — falling back to pytest discovery"
-            python -m pytest -v --maxfail=0 . || python -m unittest discover -v
-            exit 0
+            echo "⚠️ run_all_tests.py missing"
+            exit 1
           fi
 
-          echo "🔎 Resolving test file for '$TARGET'..."
-          # Try exact, loose, and suffix-stripped variants
+          echo "🔎 Resolving '$TARGET'..."
           STRIPPED="${TARGET%_test}"
           CANDIDATES=$(find . -type f -name "*.py" \( \
-              -name "${TARGET}.py" \
-              -o -name "${TARGET}*.py" \
-              -o -name "*${TARGET}*.py" \
-              -o -name "${STRIPPED}.py" \
-              -o -name "*${STRIPPED}*.py" \
-            \) 2>/dev/null | sort -u)
+              -name "${TARGET}.py" -o \
+              -name "*${TARGET}*.py" -o \
+              -name "${STRIPPED}.py" -o \
+              -name "*${STRIPPED}*.py" \) | sort -u)
 
           if [ -z "$CANDIDATES" ]; then
             echo "❌ No file matched '$TARGET'."
             echo "::group::Available test files"
-            find . -type f -name "*.py" | grep -iE "test" | sort
+            find . -name "*_test.py" | sort
             echo "::endgroup::"
             exit 1
           fi
@@ -255,13 +224,12 @@ jobs:
           echo "::group::Candidates"
           echo "$CANDIDATES"
           echo "::endgroup::"
-
           FILE=$(echo "$CANDIDATES" | head -n1)
           echo "✅ Selected: $FILE"
           python "$FILE"
 
       # ==========================================================
-      # ARTIFACTS (upload whatever .txt/.log produced)
+      # ARTIFACTS
       # ==========================================================
       - name: 📦 Upload artifacts
         if: always()
@@ -271,11 +239,12 @@ jobs:
           path: |
             **/*.txt
             **/*.log
+            **/*.zip
           retention-days: 7
           if-no-files-found: ignore
 
       # ==========================================================
-      # SUMMARY (always)
+      # SUMMARY
       # ==========================================================
       - name: 🧾 Job Summary
         if: always()
@@ -288,7 +257,5 @@ jobs:
             echo "| Task | \`${{ github.event.inputs.task }}\` |"
             echo "| Status | \`${{ job.status }}\` |"
             echo "| Run ID | \`${{ github.run_id }}\` |"
-            echo "| Ref | \`${{ github.ref }}\` |"
-            echo "| Actor | \`${{ github.actor }}\` |"
             echo "| Time | $(date -u +%Y-%m-%dT%H:%M:%SZ) |"
           } >> "$GITHUB_STEP_SUMMARY"
