@@ -1,0 +1,58 @@
+name: 📝Send_ripo_TG_txt_zip.yml
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: telegram-sender-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  combine-and-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 1. Firent Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 2. Backend Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 3. Python Setup Karein
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 4. Dependencies Install Karein
+        run: pip install requests
+
+      - name: 5. TXT Banao + Telegram Bhejo
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python3 Firent/Git_TG/TG_report/Ripo_txt_tg.py
+
+      - name: 6. ZIP Banao + Telegram Bhejo
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python3 Firent/Git_TG/TG_report/Ripo_zip_tg.py
+
+      - name: 7. Run Summary
+        if: always()
+        run: |
+          echo "### 📊 Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Trigger** | Manual (\`${{ github.actor }}\`) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
