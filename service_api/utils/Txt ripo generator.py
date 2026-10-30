@@ -1,5 +1,5 @@
 # Folder: API
-# File: Txt ripo generator.py — FULL FIXED
+# File: Txt ripo generator.py — FULL FIXED (Both Repos)
 import os
 import sys
 import datetime
@@ -18,7 +18,7 @@ SKIP_DIR_NAMES = {
 }
 SKIP_FILE_NAMES = {OUTPUT_FILE, ".DS_Store", "Thumbs.db", "desktop.ini"}
 
-# ✅ FIX: Yahan .yml, .yaml, aur .github folder ki files pakki include hain
+# ✅ Yahan .yml, .yaml, aur .github folder ki files pakki include hain
 TEXT_EXTENSIONS = {
     ".py", ".txt", ".yml", ".yaml", ".md", ".json", ".html",
     ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml",
@@ -65,18 +65,19 @@ def main():
     print("=" * 60)
     print("  VIP REPORT GENERATOR STARTING...")
     print("=" * 60)
-    print(f"📁 SCAN_ROOT: {os.path.abspath(SCAN_ROOT)}")
-    print(f"📄 OUTPUT_FILE: {OUTPUT_FILE}")
+    
+    # ✅ Dono Repos ko scan karega
+    repos_to_scan = ["Firent", "Backend"]
+    all_files = []
 
-    base_scan_dir = SCAN_ROOT
-    if not os.path.isdir(base_scan_dir):
-        print(f"⚠️ SCAN_ROOT '{base_scan_dir}' invalid — falling back to '.'")
-        base_scan_dir = "."
-
-    public_exclude = {os.path.normpath(PRIVATE_DIR)}
-    public_files = get_files(base_scan_dir, public_exclude)
-    private_files = get_files(PRIVATE_DIR) if os.path.isdir(PRIVATE_DIR) else []
-    all_files = public_files + private_files
+    for repo in repos_to_scan:
+        if os.path.isdir(repo):
+            print(f"📁 Scanning Repo: {repo}")
+            # Har repo ke andar ki files nikal rahe hain
+            repo_files = get_files(repo, {os.path.normpath(PRIVATE_DIR)})
+            all_files.extend(repo_files)
+        else:
+            print(f"⚠️ Repo nahi mila: {repo} (Skip)")
 
     if not all_files:
         print("❌ No text files found to bundle.")
@@ -91,8 +92,7 @@ def main():
         f.write("━" * 60 + "\n")
         f.write(f"⏱️  Date/Time   : {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
         f.write(f"📂 Total Files : {len(all_files)}\n")
-        f.write(f"🌐 Public Repo : {len(public_files)} files\n")
-        f.write(f"🔒 Private Repo: {len(private_files)} files\n")
+        f.write("🌐 Repos Scanned: Firent + Backend\n")
         f.write("━" * 60 + "\n\n")
 
         f.write("📑 TABLE OF CONTENTS (INDEX)\n")
@@ -118,7 +118,7 @@ def main():
                 f.write(f"[Error reading file: {e}]\n\n")
 
     size_mb = os.path.getsize(OUTPUT_FILE) / (1024 * 1024)
-    print(f"\n✅ Report generated: {OUTPUT_FILE} ({size_mb:.2f} MB, {len(all_files)} files)")
+    print(f"\n✅ VIP Report generated: {OUTPUT_FILE} ({size_mb:.2f} MB, {len(all_files)} files)")
     return 0
 
 
