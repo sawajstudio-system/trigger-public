@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       actions: write
-      contents: write
+      contents: read
 
     env:
       REPORT_FILE: 'production_report'
@@ -72,9 +72,10 @@ jobs:
       PYTHONPATH: 'service_api:service_api/integrations'
 
     steps:
-      - name: 1. Checkout Main Repo
+      - name: 1. Checkout Firent Repo
         uses: actions/checkout@v4
         with:
+          path: 'Firent'
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
@@ -98,7 +99,7 @@ jobs:
           pip install pytest || true
 
       # ==========================================================
-      # TASKS
+      # 1. TASK: Git Clean
       # ==========================================================
       - name: 🧹 Run Git Cleanup
         if: |
@@ -110,34 +111,55 @@ jobs:
           MAX_RUNS: '500'
         run: |
           set -euo pipefail
-          FILE=$(find system_service -name "cleanup.py" | head -n1)
-          [ -n "$FILE" ] || { echo "❌ cleanup.py not found"; exit 1; }
-          echo "✅ Running: $FILE"
-          python3 "$FILE"
+          FILE=$(find Firent/system_service -maxdepth 2 -name "cleanup.py" | head -n1)
+          if [ -n "$FILE" ]; then
+            python3 "$FILE"
+            echo "SYS_CLEAN_STATUS=✅ Success" >> $GITHUB_ENV
+          else
+            echo "SYS_CLEAN_STATUS=❌ Not Found" >> $GITHUB_ENV
+            exit 1
+          fi
 
+      # ==========================================================
+      # 2. TASK: Ripo TXT
+      # ==========================================================
       - name: 📄 Run Ripo TXT Generator
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'Ripo TXT'
         run: |
           set -euo pipefail
-          FILE=$(find system_service/TG_report -name "Ripo_txt_tg.py" | head -n1)
-          [ -n "$FILE" ] || { echo "❌ Ripo_txt_tg.py not found"; exit 1; }
-          echo "✅ Running: $FILE"
-          python3 "$FILE"
+          FILE=$(find Firent/system_service/TG_report -maxdepth 2 -name "Ripo_txt_tg.py" | head -n1)
+          if [ -n "$FILE" ]; then
+            python3 "$FILE"
+            echo "SYS_TXT_STATUS=✅ Sent" >> $GITHUB_ENV
+          else
+            echo "SYS_TXT_STATUS=❌ Missing" >> $GITHUB_ENV
+            exit 1
+          fi
 
+      # ==========================================================
+      # 3. TASK: Ripo ZIP
+      # ==========================================================
       - name: 🗜️ Run Ripo ZIP Pack
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'Ripo ZIP'
         run: |
           set -euo pipefail
-          FILE=$(find system_service/TG_report -name "Ripo_zip_tg.py" | head -n1)
-          [ -n "$FILE" ] || { echo "❌ Ripo_zip_tg.py not found"; exit 1; }
-          echo "✅ Running: $FILE"
-          python3 "$FILE"
+          FILE=$(find Firent/system_service/TG_report -maxdepth 2 -name "Ripo_zip_tg.py" | head -n1)
+          if [ -n "$FILE" ]; then
+            python3 "$FILE"
+            echo "SYS_ZIP_STATUS=✅ Sent" >> $GITHUB_ENV
+          else
+            echo "SYS_ZIP_STATUS=❌ Missing" >> $GITHUB_ENV
+            exit 1
+          fi
 
-      - name: 📋 Generate Code Report
+      # ==========================================================
+      # 4. TASK: VIP Report Only
+      # ==========================================================
+      - name: 📋 Generate Code Report Only
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'report_only'
@@ -146,9 +168,8 @@ jobs:
           SCAN_ROOT: '.'
         run: |
           set -euo pipefail
-          GEN=$(find service_api/utils -type f -name "Txt ripo generator.py" | head -n1)
+          GEN=$(find Firent/service_api/utils -type f -name "Txt ripo generator.py" | head -n1)
           [ -n "$GEN" ] || { echo "❌ generator not found"; exit 1; }
-          echo "✅ Generator: $GEN"
           python "$GEN"
 
           TXT=$(find . -maxdepth 3 -name "production_report.txt" | head -n1)
@@ -156,18 +177,27 @@ jobs:
           curl -sS --fail-with-body --retry 5 --retry-all-errors \
             -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
             -F "document=@$TXT" \
-            -F "caption=📂 [PRODUCTION] Report: $(basename "$TXT")" \
+            -F "caption=📂 [PRODUCTION] VIP Report" \
             "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
+          
+          echo "SYS_REPORT_STATUS=✅ Sent" >> $GITHUB_ENV
 
-      - name: 🚀 Run AI Tests
+      # ==========================================================
+      # 5. TASK: AI Tests
+      # ==========================================================
+      - name: 🚀 Run AI Tests / Master Runner
         if: |
           github.event.inputs.task != 'Git Clean' &&
           github.event.inputs.task != 'Ripo TXT' &&
           github.event.inputs.task != 'Ripo ZIP' &&
           github.event.inputs.task != 'report_only'
-        working-directory: service_api
+        working-directory: Firent/service_api
         env:
           TARGET: ${{ github.event.inputs.task }}
+          # 🔥 Status variables pass karna tests ko
+          SYS_CLEAN_STATUS: ${{ env.SYS_CLEAN_STATUS }}
+          SYS_TXT_STATUS: ${{ env.SYS_TXT_STATUS }}
+          SYS_ZIP_STATUS: ${{ env.SYS_ZIP_STATUS }}
         run: |
           set -euo pipefail
           echo "🎯 TARGET=$TARGET"
