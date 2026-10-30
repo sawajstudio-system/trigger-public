@@ -1,4 +1,4 @@
-name: Final Safe Fixer
+name: Final Safe Fixer & Master Setup
 
 on:
   workflow_dispatch:
@@ -28,60 +28,80 @@ jobs:
       - name: 3. Create VIP Generator Safely
         run: |
           echo "📦 Creating VIP Generator safely..."
-          FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"
           mkdir -p "Firent/system_service/TG_report"
           
-          echo "import os, sys, requests" > "$FILE"
-          echo "OUTPUT_FILE = 'production_report.txt'" >> "$FILE"
-          echo "TEXT_EXTS = {'.py', '.txt', '.yml', '.yaml', '.md', '.json', '.css', '.js', '.sh'}" >> "$FILE"
-          echo "files = []" >> "$FILE"
-          echo "for repo in ['Firent', 'Backend']:" >> "$FILE"
-          echo "    if os.path.isdir(repo):" >> "$FILE"
-          echo "        for root, dirs, fs in os.walk(repo):" >> "$FILE"
-          echo "            dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules'}]" >> "$FILE"
-          echo "            for f in fs:" >> "$FILE"
-          echo "                p = os.path.join(root, f)" >> "$FILE"
-          echo "                if os.path.splitext(p)[1].lower() in TEXT_EXTS: files.append((p,p))" >> "$FILE"
-          echo "with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:" >> "$FILE"
-          echo "    f.write('👑 VIP PRODUCTION REPORT\n\n')" >> "$FILE"
-          echo "    for _, p in files:" >> "$FILE"
-          echo "        try:" >> "$FILE"
-          echo "            f.write(f'\n{\"=\"*60}\nFILE: {p}\n{\"=\"*60}\n')" >> "$FILE"
-          echo "            f.write(open(p, 'r', encoding='utf-8', errors='ignore').read())" >> "$FILE"
-          echo "        except: pass" >> "$FILE"
-          echo "t = os.environ.get('BOT_TOKEN'); c = os.environ.get('CHAT_ID')" >> "$FILE"
-          echo "if t and c:" >> "$FILE"
-          echo "    requests.post(f'https://api.telegram.org/bot{t}/sendDocument', data={'chat_id': c, 'caption': 'VIP Report'}, files={'document': open(OUTPUT_FILE, 'rb')})" >> "$FILE"
+          cat << 'ENDOFCODE' > "Firent/system_service/TG_report/Ripo_txt_tg.py"
+import os
+import sys
+import requests
+
+OUTPUT_FILE = "production_report.txt"
+TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".css", ".js", ".sh"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
+
+files = []
+for repo in ["Firent", "Backend"]:
+    if os.path.isdir(repo):
+        for root, dirs, fs in os.walk(repo):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for f in fs:
+                p = os.path.join(root, f)
+                if os.path.splitext(p)[1].lower() in TEXT_EXTS:
+                    files.append((os.path.normpath(p), p))
+
+with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+    f.write("👑 VIP PRODUCTION REPORT\n\n")
+    for _, p in files:
+        try:
+            f.write(f"\n{'='*60}\nFILE: {p}\n{'='*60}\n")
+            with open(p, "r", encoding="utf-8", errors="ignore") as src:
+                f.write(src.read())
+        except Exception as e:
+            print(f"Skipping {p}: {e}")
+
+t = os.environ.get("BOT_TOKEN")
+c = os.environ.get("CHAT_ID")
+if t and c:
+    try:
+        with open(OUTPUT_FILE, "rb") as doc:
+            requests.post(
+                f"https://api.telegram.org/bot{t}/sendDocument",
+                data={"chat_id": c, "caption": "👑 VIP Production Report"},
+                files={"document": doc}
+            )
+        print("✅ Report sent to Telegram successfully.")
+    except Exception as e:
+        print(f"⚠️ Failed to send to Telegram: {e}")
+else:
+    print("⚠️ BOT_TOKEN or CHAT_ID not set, skipping Telegram upload.")
+ENDOFCODE
           echo "✅ File generated perfectly."
 
-      - name: 4. Update Path in Workflow (Fixing Emoji Error)
+      - name: 4. Update Path in Workflow
         run: |
-          echo "📝 Updating path..."
-          # Sed nahi chalayenge kyunki emoji ki wajah se error aa raha hai
-          # Hum python ka use karke file dhoondhenge aur update karenge
-          
+          echo "📝 Updating paths in workflow files..."
           python3 -c "
-import glob, os
-files = glob.glob('Firent/.github/workflows/*.yml')
-for f in files:
+import glob
+for f in glob.glob('Firent/.github/workflows/*.yml'):
     if 'universal_master' in f or 'One-Time' in f:
-        print(f'Found: {f}')
-        with open(f, 'r') as file:
+        print(f'Checking: {f}')
+        with open(f, 'r', encoding='utf-8') as file:
             content = file.read()
         
-        # Path update karo
-        content = content.replace('FILE=\"Firent/Ripo_txt_tg.py\"', 'FILE=\"Firent/system_service/TG_report/Ripo_txt_tg.py\"')
-        
-        with open(f, 'w') as file:
-            file.write(content)
-        print(f'✅ Updated {f}')
+        # Safe replacement
+        updated = content.replace('FILE=\"Firent/Ripo_txt_tg.py\"', 'FILE=\"Firent/system_service/TG_report/Ripo_txt_tg.py\"')
+        if content != updated:
+            with open(f, 'w', encoding='utf-8') as file:
+                file.write(updated)
+            print(f'✅ Updated path in {f}')
 "
-          echo "✅ Paths updated."
+          echo "✅ Path update check complete."
 
-      - name: 5. Commit and Push
+      - name: 5. Commit and Push Safely
         run: |
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
+          git pull origin ${{ github.ref_name }} --rebase || echo "No remote changes to pull"
           git add .
-          git commit -m "Final Fix: Updated path and removed emojis from sed" || echo "No changes"
+          git commit -m "Final Fix: Upgraded script writing mechanism and path updates" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
