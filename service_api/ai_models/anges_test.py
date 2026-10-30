@@ -1,32 +1,31 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Folder: API
-# File: cloudflare_08_test.py
+# File: anges_test.py
 import os
 import sys
 import requests
 from service_api.integrations.telegram_01_helper import send_telegram_message
 
 def run_test():
-    account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
-    api_token = os.getenv("CLOUDFLARE_API_TOKEN")
+    api_key = os.getenv("ANGES_API_KEY")
     
-    if not account_id or not api_token:
-        send_telegram_message("❌ <b>[PRODUCTION]</b> Cloudflare test failed: Secret missing.")
+    if not api_key:
+        send_telegram_message("❌ <b>[PRODUCTION]</b> Anges AI test failed: ANGES_API_KEY missing.")
         sys.exit(1)
 
-    # Ye line automatically GitHub Secret se Account ID utha legi
-    api_url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/@cf/meta/llama-3.1-8b-instruct"
-    
+    # Sahi Base URL (apihub ke saath)
+    api_url = "https://apihub.agnes-ai.com/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {api_token}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
+    # Naya Model Name
     payload = {
-        "messages": [
-            {"role": "user", "content": "Say exactly: 'Cloudflare AI is free and working!'"}
-        ]
+        "model": "agnes-2.5-flash",
+        "messages": [{"role": "user", "content": "Say exactly: 'Anges AI is working!'"}],
+        "max_tokens": 100
     }
 
     try:
@@ -34,26 +33,26 @@ def run_test():
         
         if res.status_code == 200:
             data = res.json()
-            ai_reply = data.get('result', {}).get('response', 'No reply')
+            ai_reply = data['choices'][0]['message']['content'].strip()
             
             message = (
-                "☁️ <b>[VIP PRODUCTION] CLOUDFLARE AI REPORT</b> ☁️\n"
+                "🧠 <b>[VIP PRODUCTION] ANGES AI REPORT</b> 🧠\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 "🟢 <b>STATUS:</b> <code>PASSED</code>\n"
-                "🏆 <b>MODEL:</b> <code>llama-3.1-8b-instruct</code>\n"
+                "🏆 <b>MODEL:</b> <code>agnes-2.5-flash</code>\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"💬 <b>AI REPLY:</b>\n<i>{ai_reply}</i>\n"
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                "🚀 <i>Cloudflare is connected!</i>"
+                "🚀 <i>Anges AI is connected!</i>"
             )
             send_telegram_message(message)
             sys.exit(0)
         else:
-            send_telegram_message(f"❌ <b>[PRODUCTION]</b> Cloudflare test failed.\nHTTP {res.status_code}\n<code>{res.text[:150]}</code>")
+            send_telegram_message(f"❌ <b>[PRODUCTION]</b> Anges AI failed.\nHTTP {res.status_code}\n<code>{res.text[:150]}</code>")
             sys.exit(1)
             
     except Exception as e:
-        send_telegram_message(f"❌ <b>[PRODUCTION]</b> Cloudflare test failed. Network Error: {str(e)}")
+        send_telegram_message(f"❌ <b>[PRODUCTION]</b> Anges AI Network Error: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":

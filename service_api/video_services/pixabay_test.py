@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Folder: API
-# File: pixabay_11_test.py
+# File: pixabay_test.py
 import os
 import sys
 import requests

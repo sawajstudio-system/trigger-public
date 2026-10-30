@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Folder: API
-# File: magic_14_test.py
+# File: magic_test.py
 import os
 import sys
 import time

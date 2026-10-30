@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 # Folder: API
-# File: tanvo_17_test.py
+# File: tanvo_test.py
 import os
 import sys
 import time
