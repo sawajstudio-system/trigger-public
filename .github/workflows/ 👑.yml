@@ -1,153 +1,155 @@
-name: 👑
+name: 🚀 
 
 on:
-  workflow_dispatch:
-    inputs:
-      task:
-        description: 'Choose task or test to run'
-        required: true
-        default: 'all'
-        type: choice
-        options:
-          - 'all'
-          - 'Git Clean'
-          - 'Ripo TXT'
-          - 'Ripo ZIP'
-          - 'report_only'
-          - 'image_creator'
-          - 'cloudinary_16_test'
-          - 'tanvo_17_test'
-          - 'magic_14_test'
-          - 'media_10_test'
-          - 'pixabay_11_test'
-          - 'pexels_12_test'
-          - 'coverr_13_test'
-          - 'telegram_02_test'
-          - 'github_03_test'
-          - 'gemini_04_test'
-          - 'groq_06_test'
-          - 'openrouter_05_test'
-          - 'nvidia_07_test'
-          - 'cloudflare_08_test'
-          - 'cohere_09_test'
-          - 'anges_15_test'
-
-concurrency:
-  group: supercharged-master-${{ github.ref }}-${{ inputs.task }}
-  cancel-in-progress: false
+  workflow_dispatch: # GitHub Actions tab se manual run karne ke liye
 
 jobs:
-  master_execution:
+  full_upgrade:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
     permissions:
-      actions: write
-      contents: read
-
-    env:
-      REPORT_FILE: 'production_report'
-      TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
-      TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-      TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
-      ANGES_API_KEY: ${{ secrets.ANGES_API_KEY }}
-      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-      COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
-      MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
-      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-      TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
+      contents: write # Git commit aur push permissions
 
     steps:
-      - name: 1. Checkout Firent Repo
+      - name: 1. Checkout Repository
         uses: actions/checkout@v4
         with:
-          path: 'Firent'
           token: ${{ secrets.TOKEN_GITHUB }}
+          persist-credentials: true
           fetch-depth: 0
 
-      - name: 2. Checkout Backend Repo
-        uses: actions/checkout@v4
-        with:
-          repository: 'sawajstudio-system/Backend'
-          path: 'Backend'
-          token: ${{ secrets.TOKEN_GITHUB }}
-
-      - name: 3. Set up Python
+      - name: 2. Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: 4. Install Dependencies
-        run: pip install "requests>=2.31.0,<3.0.0"
-
-      # ==========================================================
-      # TASK: Git Clean
-      # ==========================================================
-      - name: 🧹 Run Git Cleanup
-        if: ${{ inputs.task == 'Git Clean' }}
-        env:
-          GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
-          REPO: ${{ github.repository }}
-          CURRENT_RUN_ID: ${{ github.run_id }}
-          MAX_RUNS: '500'
-        run: python3 Firent/Git/Git_clean/cleanup.py
-
-      # ==========================================================
-      # TASK: Ripo TXT
-      # ==========================================================
-      - name: 📄 Run Ripo TXT Generator & Sender
-        if: ${{ inputs.task == 'Ripo TXT' }}
-        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py
-
-      # ==========================================================
-      # TASK: Ripo ZIP
-      # ==========================================================
-      - name: 🗜️ Run Ripo ZIP Pack & Sender
-        if: ${{ inputs.task == 'Ripo ZIP' }}
-        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py
-
-      # ==========================================================
-      # TASK: Report Only
-      # ==========================================================
-      - name: 📋 Generate Code Report Only
-        if: ${{ inputs.task == 'report_only' }}
+      - name: 3. Run Full Auto-Upgrade & Restructure Script
         run: |
-          python "Firent/service_api/utils/Txt ripo generator.py"
-          for file in *.txt; do
-            if [ -f "$file" ]; then
-              curl -sS --fail-with-body --retry 3 -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
-                   -F "document=@$file" -F "caption=📂 [PRODUCTION] Report: $file" \
-                   "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
-            fi
-          done
+          python - << 'EOF'
+          import os
+          import shutil
 
-      # ==========================================================
-      # TASK: AI Tests & Runners (All or Specific)
-      # ==========================================================
-      - name: 🚀 Run AI Tests / Master Runner
-        if: ${{ inputs.task != 'Git Clean' && inputs.task != 'Ripo TXT' && inputs.task != 'Ripo ZIP' && inputs.task != 'report_only' }}
-        working-directory: Firent/service_api
-        env:
-          TARGET: ${{ github.event.inputs.task }}
+          # 1. Definitive File Mapping Structure inside service_api
+          file_mapping = {
+              "service_api/ai_models": [
+                  "gemini_04_test.py",
+                  "groq_06_test.py",
+                  "cohere_09_test.py",
+                  "nvidia_07_test.py",
+                  "openrouter_05_test.py",
+                  "cloudflare_08_test.py",
+                  "magic_14_test.py",
+                  "anges_15_test.py",
+                  "tanvo_17_test.py"
+              ],
+              "service_api/video_services": [
+                  "coverr_13_test.py",
+                  "pexels_12_test.py",
+                  "pixabay_11_test.py",
+                  "media_10_test.py"
+              ],
+              "service_api/audio_media": [
+                  "cloudinary_16_test.py"
+              ],
+              "service_api/integrations": [
+                  "telegram_01_helper.py",
+                  "telegram_02_bot_test.py"
+              ],
+              "service_api/utils": [
+                  "Txt ripo generator.py",
+                  "github_03_token_test.py"
+              ]
+          }
+
+          print("📁 Creating service_api subfolders...")
+          for folder in file_mapping.keys():
+              os.makedirs(folder, exist_ok=True)
+              init_file = os.path.join(folder, "__init__.py")
+              if not os.path.exists(init_file):
+                  open(init_file, "w").close()
+
+          print("📦 Moving files to their respective subfolders and fixing code...")
+          for folder, files in file_mapping.items():
+              for file in files:
+                  src = None
+                  # Search file anywhere in the repo workspace
+                  for root, dirs, filenames in os.walk("."):
+                      if any(skip in root for skip in [".git", ".github", "Git", "Backend"]):
+                          continue
+                      if file in filenames:
+                          src = os.path.join(root, file)
+                          break
+                  
+                  if src and os.path.exists(src):
+                      dest = os.path.join(folder, file)
+                      if os.path.abspath(src) != os.path.abspath(dest):
+                          shutil.move(src, dest)
+                          print(f"   -> Moved: {src} to {dest}")
+                      
+                      # Automatically fix python imports & paths for subfolder files
+                      if folder != "service_api/integrations" and file.endswith(".py"):
+                          with open(dest, "r", encoding="utf-8") as f:
+                              content = f.read()
+                          
+                          # Fix helper import
+                          if "from telegram_01_helper import" in content:
+                              content = content.replace(
+                                  "from telegram_01_helper import", 
+                                  "from service_api.integrations.telegram_01_helper import"
+                              )
+                          
+                          # Inject sys.path adjustment so standalone subfolder execution never fails
+                          sys_path_fix = "import sys, os\nsys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))\n"
+                          if "sys.path.append" not in content and "sys.path.insert" not in content:
+                              content = sys_path_fix + content
+
+                          with open(dest, "w", encoding="utf-8") as f:
+                              f.write(content)
+                  else:
+                      print(f"   ⚠️ Warning: File not found -> {file}")
+
+          print("🚀 Relocating test runners into service_api/...")
+          for runner in ["run_all_tests.py", "run_my_tests.py"]:
+              runner_src = None
+              for root, dirs, filenames in os.walk("."):
+                  if any(skip in root for skip in [".git", ".github", "Git"]):
+                      continue
+                  if runner in filenames:
+                      runner_src = os.path.join(root, runner)
+                      break
+              if runner_src and os.path.exists(runner_src):
+                  dest_runner = os.path.join("service_api", runner)
+                  if os.path.abspath(runner_src) != os.path.abspath(dest_runner):
+                      shutil.move(runner_src, dest_runner)
+                      print(f"   -> Runner moved: {runner_src} to {dest_runner}")
+
+          # Update run_all_tests.py for recursive subfolder scanning
+          run_all_path = "service_api/run_all_tests.py"
+          if os.path.exists(run_all_path):
+              with open(run_all_path, "r", encoding="utf-8") as f:
+                  code = f.read()
+              code = code.replace('glob.glob("*_test.py")', 'glob.glob("**/*_test.py", recursive=True)')
+              with open(run_all_path, "w", encoding="utf-8") as f:
+                  f.write(code)
+              print("🔧 Updated run_all_tests.py with recursive globbing.")
+
+          print("🧹 Cleaning up old unused/empty directories...")
+          for old_dir in ["API", "api", "services"]:
+              if os.path.exists(old_dir) and os.path.isdir(old_dir):
+                  try:
+                      shutil.rmtree(old_dir)
+                      print(f"   -> Removed old folder: {old_dir}")
+                  except:
+                      pass
+
+          print("✅ Full Upgrade and Code Optimization completed successfully!")
+          EOF
+
+      - name: 4. Commit and Push Upgraded Code
         run: |
-          if [ "$TARGET" == "all" ]; then
-            echo "🚀 Running master test runner..."
-            python run_all_tests.py
-          else
-            # Smart search inside subfolders of service_api
-            FILE=$(find . -name "*${TARGET}*.py" | head -n 1)
-            if [ -z "$FILE" ]; then
-              echo "❌ Error: '$TARGET' naam ki koi test file nahi mili!"
-              exit 1
-            echo "✅ Found file: $FILE"
-            python "$FILE"
-          fi
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add .
+          git status
+          git diff --staged --quiet || git commit -m "🚀 Full Upgrade: Complete service_api architecture with automated code fixes & recursive test runner"
+          git push origin main
+          echo "🎉 Successfully pushed Full Upgrade to GitHub main branch!"
