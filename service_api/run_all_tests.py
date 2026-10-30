@@ -1,5 +1,3 @@
-# Folder: API
-# File: run_all_tests.py
 import os
 import sys
 import subprocess
@@ -17,12 +15,14 @@ def send_final_report(passed, failed):
     if passed:
         msg += "✅ <b>PASSED:</b>\n"
         for p in passed:
-            msg += f"  ✔️ <code>{p.replace('_test.py', '').replace('.py', '')}</code>\n"
+            test_name = os.path.basename(p).replace('_test.py', '').replace('.py', '')
+            msg += f"  ✔️ <code>{test_name}</code>\n"
             
     if failed:
         msg += "\n❌ <b>FAILED:</b>\n"
         for f in failed:
-            msg += f"  ❌ <code>{f.replace('_test.py', '').replace('.py', '')}</code>\n"
+            test_name = os.path.basename(f).replace('_test.py', '').replace('.py', '')
+            msg += f"  ❌ <code>{test_name}</code>\n"
             
     msg += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
     msg += f"📊 <b>TOTAL:</b> {len(passed) + len(failed)} | ✅ {len(passed)} | ❌ {len(failed)}"
@@ -34,7 +34,9 @@ def send_final_report(passed, failed):
         pass
 
 def run_all():
-    print("🚀 [VIP SYSTEM] Auto-running all tests...")
+    print("🚀 [VIP SYSTEM] Auto-running all tests recursively from subfolders...")
+    
+    # Recursive globbing taaki subfolders ke andar ki saari test files mil jayein
     test_files = sorted(glob.glob("**/*_test.py", recursive=True))
     
     if os.path.exists("image_creator.py"):
@@ -47,12 +49,14 @@ def run_all():
     failed_tests = []
     passed_tests = []
     
-    # 🛠️ Yahan secrets ko copy kiya jaa raha hai
     my_env = os.environ.copy()
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
+    if parent_dir not in my_env.get("PYTHONPATH", ""):
+        my_env["PYTHONPATH"] = f"{parent_dir}:{my_env.get('PYTHONPATH', '')}"
 
     for test_file in test_files:
         print(f"\n▶️ Running: {test_file}")
-        # 🛠️ Yahan env pass kiya jaa raha hai, isse cloudinary ko keys mil jayengi
         result = subprocess.run([sys.executable, test_file], env=my_env)
         
         if result.returncode == 0:
