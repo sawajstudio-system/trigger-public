@@ -1,0 +1,30 @@
+name: Send_ripo_TG_txt
+
+on:
+  workflow_dispatch:
+
+jobs:
+  combine-and-send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Firent Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 2. Backend Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 3. Python Dependencies Install Karein
+        run: pip install requests
+
+      - name: 4. Code Combine Karke Telegram Bhejein
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: python3 Firent/git/send_to_telegram.py
