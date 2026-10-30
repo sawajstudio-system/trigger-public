@@ -1,13 +1,64 @@
-name: Send_ripo_TG_txt_zip
+name: 📝Send_ripo_TG_txt_zip
+
+# ============================================================
+# ⚠️ SIRF MANUAL TRIGGER
+# - Koi push / pull_request / schedule NAHI
+# - Bas ek click "Run workflow" → task select karo → chalao
+# ============================================================
 on:
-  workflow_dispatch:        # ← SIRF MANUAL
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Choose task to run'
+        required: true
+        default: 'Ripo TXT'
+        type: choice
+        options:
+          - 'Git Clean'
+          - 'Ripo TXT'
+          - 'Ripo ZIP'
 
 concurrency:
-  group: telegram-sender-${{ github.ref }}
+  group: supercharged-${{ github.ref }}-${{ inputs.task }}
   cancel-in-progress: false
 
 jobs:
-  combine-and-send:
+  # ==========================================================
+  # TASK: Git Clean — purane workflow runs delete
+  # ==========================================================
+  task-git-clean:
+    if: ${{ inputs.task == 'Git Clean' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: 1. Firent Repo Checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 2. Python Setup Karein
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 3. Run Cleanup Script
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          MAX_RUNS: '500'
+        run: python3 Firent/Git/Git_clean/cleanup.py
+
+  # ==========================================================
+  # TASK: Ripo TXT — code combine + Telegram
+  # ==========================================================
+  task-ripo-txt:
+    if: ${{ inputs.task == 'Ripo TXT' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -37,21 +88,40 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python3 Firent/Git_TG/TG_report/Ripo_txt_tg.py
+        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py
 
-      - name: 6. ZIP Banao + Telegram Bhejo
+  # ==========================================================
+  # TASK: Ripo ZIP — non-text files pack + Telegram
+  # ==========================================================
+  task-ripo-zip:
+    if: ${{ inputs.task == 'Ripo ZIP' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 1. Firent Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 2. Backend Repo Download Karein
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 3. Python Setup Karein
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 4. Dependencies Install Karein
+        run: pip install requests
+
+      - name: 5. ZIP Banao + Telegram Bhejo
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
-        run: python3 Firent/Git_TG/TG_report/Ripo_zip_tg.py
-
-      - name: 7. Run Summary
-        if: always()
-        run: |
-          echo "### 📊 Workflow Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Status** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Trigger** | Manual (\`${{ github.actor }}\`) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Time** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py
