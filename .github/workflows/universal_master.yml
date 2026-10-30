@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       actions: write
-      contents: read
+      contents: write
 
     env:
       REPORT_FILE: 'production_report'
@@ -69,13 +69,12 @@ jobs:
       TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
       PYTHONUNBUFFERED: '1'
       PYTHONDONTWRITEBYTECODE: '1'
-      PYTHONPATH: 'Firent/service_api:Firent/service_api/integrations'
+      PYTHONPATH: 'service_api:service_api/integrations'
 
     steps:
-      - name: 1. Checkout Firent Repo
+      - name: 1. Checkout Main Repo
         uses: actions/checkout@v4
         with:
-          path: 'Firent'
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
@@ -99,7 +98,7 @@ jobs:
           pip install pytest || true
 
       # ==========================================================
-      # 1. TASK: Git Clean (Runs on 'all' OR 'Git Clean')
+      # TASKS
       # ==========================================================
       - name: 🧹 Run Git Cleanup
         if: |
@@ -111,43 +110,34 @@ jobs:
           MAX_RUNS: '500'
         run: |
           set -euo pipefail
-          FILE=$(find Firent -maxdepth 4 -name "cleanup.py" -path "*Git_clean*" | head -n1)
+          FILE=$(find system_service -name "cleanup.py" | head -n1)
           [ -n "$FILE" ] || { echo "❌ cleanup.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
-      # ==========================================================
-      # 2. TASK: Ripo TXT (Runs on 'all' OR 'Ripo TXT')
-      # ==========================================================
-      - name: 📄 Run Ripo TXT Generator & Sender
+      - name: 📄 Run Ripo TXT Generator
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'Ripo TXT'
         run: |
           set -euo pipefail
-          FILE=$(find Firent -maxdepth 5 -name "Ripo_txt_tg.py" | head -n1)
+          FILE=$(find system_service/TG_report -name "Ripo_txt_tg.py" | head -n1)
           [ -n "$FILE" ] || { echo "❌ Ripo_txt_tg.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
-      # ==========================================================
-      # 3. TASK: Ripo ZIP (Runs on 'all' OR 'Ripo ZIP')
-      # ==========================================================
-      - name: 🗜️ Run Ripo ZIP Pack & Sender
+      - name: 🗜️ Run Ripo ZIP Pack
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'Ripo ZIP'
         run: |
           set -euo pipefail
-          FILE=$(find Firent -maxdepth 5 -name "Ripo_zip_tg.py" | head -n1)
+          FILE=$(find system_service/TG_report -name "Ripo_zip_tg.py" | head -n1)
           [ -n "$FILE" ] || { echo "❌ Ripo_zip_tg.py not found"; exit 1; }
           echo "✅ Running: $FILE"
           python3 "$FILE"
 
-      # ==========================================================
-      # 4. TASK: Report Only (Runs on 'all' OR 'report_only')
-      # ==========================================================
-      - name: 📋 Generate Code Report Only
+      - name: 📋 Generate Code Report
         if: |
           github.event.inputs.task == 'all' || 
           github.event.inputs.task == 'report_only'
@@ -156,48 +146,37 @@ jobs:
           SCAN_ROOT: '.'
         run: |
           set -euo pipefail
-          GEN=$(find Firent -maxdepth 6 -type f -name "Txt ripo generator.py" | head -n1)
+          GEN=$(find service_api/utils -type f -name "Txt ripo generator.py" | head -n1)
           [ -n "$GEN" ] || { echo "❌ generator not found"; exit 1; }
           echo "✅ Generator: $GEN"
           python "$GEN"
 
           TXT=$(find . -maxdepth 3 -name "production_report.txt" | head -n1)
           [ -n "$TXT" ] || { echo "❌ no report generated"; exit 1; }
-          echo "📤 Uploading: $TXT"
           curl -sS --fail-with-body --retry 5 --retry-all-errors \
             -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
             -F "document=@$TXT" \
             -F "caption=📂 [PRODUCTION] Report: $(basename "$TXT")" \
             "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
 
-      # ==========================================================
-      # 5. TASK: AI Tests & Runners (Runs on 'all' OR specific test)
-      # ==========================================================
-      - name: 🚀 Run AI Tests / Master Runner
+      - name: 🚀 Run AI Tests
         if: |
           github.event.inputs.task != 'Git Clean' &&
           github.event.inputs.task != 'Ripo TXT' &&
           github.event.inputs.task != 'Ripo ZIP' &&
           github.event.inputs.task != 'report_only'
-        working-directory: Firent/service_api
+        working-directory: service_api
         env:
           TARGET: ${{ github.event.inputs.task }}
         run: |
           set -euo pipefail
           echo "🎯 TARGET=$TARGET"
-          echo "📁 CWD=$(pwd)"
-
+          
           if [ "$TARGET" = "all" ]; then
-            if [ -f run_all_tests.py ]; then
-              echo "🚀 Running master: run_all_tests.py"
-              python run_all_tests.py
-              exit $?
-            fi
-            echo "⚠️ run_all_tests.py missing"
-            exit 1
+            python run_all_tests.py
+            exit $?
           fi
 
-          echo "🔎 Resolving '$TARGET'..."
           STRIPPED="${TARGET%_test}"
           CANDIDATES=$(find . -type f -name "*.py" \( \
               -name "${TARGET}.py" -o \
@@ -207,44 +186,17 @@ jobs:
 
           if [ -z "$CANDIDATES" ]; then
             echo "❌ No file matched '$TARGET'."
-            echo "::group::Available test files"
-            find . -name "*_test.py" | sort
-            echo "::endgroup::"
             exit 1
           fi
-
-          echo "::group::Candidates"
-          echo "$CANDIDATES"
-          echo "::endgroup::"
           FILE=$(echo "$CANDIDATES" | head -n1)
-          echo "✅ Selected: $FILE"
           python "$FILE"
 
-      # ==========================================================
-      # ARTIFACTS & SUMMARY
-      # ==========================================================
-      - name: 📦 Upload artifacts
+      - name: 📦 Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: master-${{ github.event.inputs.task }}-${{ github.run_id }}
+          name: master-run
           path: |
             **/*.txt
-            **/*.log
             **/*.zip
           retention-days: 7
-          if-no-files-found: ignore
-
-      - name: 🧾 Job Summary
-        if: always()
-        run: |
-          {
-            echo "## 🚀 Master Run Summary"
-            echo ""
-            echo "| Field | Value |"
-            echo "|---|---|"
-            echo "| Task | \`${{ github.event.inputs.task }}\` |"
-            echo "| Status | \`${{ job.status }}\` |"
-            echo "| Run ID | \`${{ github.run_id }}\` |"
-            echo "| Time | $(date -u +%Y-%m-%dT%H:%M:%SZ) |"
-          } >> "$GITHUB_STEP_SUMMARY"
