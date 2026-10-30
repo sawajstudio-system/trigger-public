@@ -77,12 +77,19 @@ def run_test():
         else:
             print(f"❌ Audio generation failed. HTTP {audio_res.status_code}")
     except Exception as e:
+        # Yahan error aane par bhi script fail NAHI hogi, bas warning dikhayegi
         print(f"⚠️ Audio Server Error (Bypassed): {e}")
 
-    # Agar image aur audio dono fail ho jayein tabhi test fail karo
+    # ==========================================
+    # FINAL RESULT
+    # ==========================================
+    # Agar image aur audio dono fail ho jayein tabhi test fail karo (Exit 1).
+    # Warna PASS (Exit 0) ho jayega.
     if success_count == 0:
+        send_telegram_message("❌ <b>[PRODUCTION] MEDIA TEST FAILED:</b> Dono Image aur Audio generate nahi hue.")
         sys.exit(1)
     else:
+        print("✅ Media Test Passed (At least one media generated).")
         sys.exit(0)
 
 if __name__ == "__main__":
