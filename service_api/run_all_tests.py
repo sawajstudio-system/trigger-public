@@ -35,7 +35,7 @@ def send_final_report(passed, failed):
 
 def run_all():
     print("🚀 [VIP SYSTEM] Auto-running all tests...")
-    test_files = sorted(glob.glob("*_test.py"))
+    test_files = sorted(glob.glob("**/*_test.py", recursive=True))
     
     if os.path.exists("image_creator.py"):
         test_files.append("image_creator.py")
