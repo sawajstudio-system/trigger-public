@@ -1,0 +1,70 @@
+name: One-Time File Mover & Final Cleaner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  move_file:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Move File to System Service
+        run: |
+          echo "🚚 Moving 'Txt ripo generator.py' to system_service..."
+          
+          SRC_FILE="Firent/service_api/utils/Txt ripo generator.py"
+          DEST_DIR="Firent/system_service"
+          
+          if [ -f "$SRC_FILE" ]; then
+            mv "$SRC_FILE" "$DEST_DIR/"
+            echo "✅ Report Generator moved successfully!"
+          else
+            echo "⚠️ Report Generator pehle hi move ho chuki hai."
+          fi
+
+      - name: 3. Rename remaining numbered files (Fixing 03)
+        run: |
+          echo "🔄 Fixing github_03_token_test.py..."
+          
+          # Is specific file ka naam badal rahe hain
+          OLD_FILE="Firent/service_api/utils/github_03_token_test.py"
+          NEW_FILE="Firent/service_api/utils/github_token_test.py"
+          
+          if [ -f "$OLD_FILE" ]; then
+            mv "$OLD_FILE" "$NEW_FILE"
+            echo "✅ Renamed: github_03_token_test.py -> github_token_test.py"
+          fi
+
+      - name: 4. Update universal_master.yml Paths
+        run: |
+          echo "📝 Updating workflow paths..."
+          YML_FILE="Firent/.github/workflows/universal_master.yml"
+          
+          if [ -f "$YML_FILE" ]; then
+            # Report Generator ka naya path set karna
+            sed -i 's|service_api/utils|system_service|g' "$YML_FILE"
+            sed -i 's|github_03_token_test|github_token_test|g' "$YML_FILE"
+            echo "✅ Paths updated!"
+          fi
+
+      - name: 5. Commit and Push
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "actions@github.com"
+          
+          git add .
+          if git diff --staged --quiet; then
+            echo "✅ No changes to commit."
+          else
+            git commit -m "Auto-Fix: Moved Generator, Renamed github token test & updated YML"
+            git push origin HEAD:${{ github.ref_name }}
+            echo "✅ Successfully pushed!"
+          fi
