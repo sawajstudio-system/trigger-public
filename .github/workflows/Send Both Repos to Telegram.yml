@@ -1,0 +1,63 @@
+name: Send Both Repos to Telegram
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  combine-and-send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Firent Repository
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Checkout Backend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: Combine Code into Single TXT File
+        run: |
+          OUTPUT_FILE="combined_code.txt"
+          echo "=== FIRENS & BACKEND REPOSITORIES CODE ===" > $OUTPUT_FILE
+          echo "Generated on: $(date)" >> $OUTPUT_FILE
+          echo -e "==========================================\n\n" >> $OUTPUT_FILE
+
+          # Dono repositories ki sabhi files ko ek txt file mein add karna (node_modules, .git, venv ko chhod kar)
+          find Firent Backend -type f \
+            -not -path '*/.*' \
+            -not -path '*/node_modules/*' \
+            -not -path '*/venv/*' \
+            -not -name '*.txt' | while read -r file; do
+              echo "--------------------------------------------------" >> $OUTPUT_FILE
+              echo "FILE: $file" >> $OUTPUT_FILE
+              echo "--------------------------------------------------" >> $OUTPUT_FILE
+              cat "$file" >> $OUTPUT_FILE
+              echo -e "\n\n" >> $OUTPUT_FILE
+          done
+
+      - name: Send TXT Document to Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+        run: |
+          python3 -c "
+          import os, requests
+          token = os.getenv('BOT_TOKEN')
+          chat_id = os.getenv('CHAT_ID')
+          file_path = 'combined_code.txt'
+          
+          url = f'https://api.telegram.org/bot{token}/sendDocument'
+          with open(file_path, 'rb') as f:
+              files = {'document': f}
+              data = {'chat_id': chat_id, 'caption': 'Firent & Backend Repositories Combined Code'}
+              response = requests.post(url, data=data, files=files)
+              print(response.text)
+              response.raise_for_status()
+          "
