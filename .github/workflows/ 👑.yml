@@ -1,0 +1,153 @@
+name: 👑
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Choose task or test to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'Git Clean'
+          - 'Ripo TXT'
+          - 'Ripo ZIP'
+          - 'report_only'
+          - 'image_creator'
+          - 'cloudinary_16_test'
+          - 'tanvo_17_test'
+          - 'magic_14_test'
+          - 'media_10_test'
+          - 'pixabay_11_test'
+          - 'pexels_12_test'
+          - 'coverr_13_test'
+          - 'telegram_02_test'
+          - 'github_03_test'
+          - 'gemini_04_test'
+          - 'groq_06_test'
+          - 'openrouter_05_test'
+          - 'nvidia_07_test'
+          - 'cloudflare_08_test'
+          - 'cohere_09_test'
+          - 'anges_15_test'
+
+concurrency:
+  group: supercharged-master-${{ github.ref }}-${{ inputs.task }}
+  cancel-in-progress: false
+
+jobs:
+  master_execution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      actions: write
+      contents: read
+
+    env:
+      REPORT_FILE: 'production_report'
+      TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+      TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      ANGES_API_KEY: ${{ secrets.ANGES_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
+      MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
+
+    steps:
+      - name: 1. Checkout Firent Repo
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Checkout Backend Repo
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+
+      - name: 3. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 4. Install Dependencies
+        run: pip install "requests>=2.31.0,<3.0.0"
+
+      # ==========================================================
+      # TASK: Git Clean
+      # ==========================================================
+      - name: 🧹 Run Git Cleanup
+        if: ${{ inputs.task == 'Git Clean' }}
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+          REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          MAX_RUNS: '500'
+        run: python3 Firent/Git/Git_clean/cleanup.py
+
+      # ==========================================================
+      # TASK: Ripo TXT
+      # ==========================================================
+      - name: 📄 Run Ripo TXT Generator & Sender
+        if: ${{ inputs.task == 'Ripo TXT' }}
+        run: python3 Firent/Git/TG_report/Ripo_txt_tg.py
+
+      # ==========================================================
+      # TASK: Ripo ZIP
+      # ==========================================================
+      - name: 🗜️ Run Ripo ZIP Pack & Sender
+        if: ${{ inputs.task == 'Ripo ZIP' }}
+        run: python3 Firent/Git/TG_report/Ripo_zip_tg.py
+
+      # ==========================================================
+      # TASK: Report Only
+      # ==========================================================
+      - name: 📋 Generate Code Report Only
+        if: ${{ inputs.task == 'report_only' }}
+        run: |
+          python "Firent/service_api/utils/Txt ripo generator.py"
+          for file in *.txt; do
+            if [ -f "$file" ]; then
+              curl -sS --fail-with-body --retry 3 -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
+                   -F "document=@$file" -F "caption=📂 [PRODUCTION] Report: $file" \
+                   "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument"
+            fi
+          done
+
+      # ==========================================================
+      # TASK: AI Tests & Runners (All or Specific)
+      # ==========================================================
+      - name: 🚀 Run AI Tests / Master Runner
+        if: ${{ inputs.task != 'Git Clean' && inputs.task != 'Ripo TXT' && inputs.task != 'Ripo ZIP' && inputs.task != 'report_only' }}
+        working-directory: Firent/service_api
+        env:
+          TARGET: ${{ github.event.inputs.task }}
+        run: |
+          if [ "$TARGET" == "all" ]; then
+            echo "🚀 Running master test runner..."
+            python run_all_tests.py
+          else
+            # Smart search inside subfolders of service_api
+            FILE=$(find . -name "*${TARGET}*.py" | head -n 1)
+            if [ -z "$FILE" ]; then
+              echo "❌ Error: '$TARGET' naam ki koi test file nahi mili!"
+              exit 1
+            echo "✅ Found file: $FILE"
+            python "$FILE"
+          fi
