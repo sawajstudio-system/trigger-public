@@ -1,4 +1,4 @@
-name: Final TXT Cleanup & Master Setup
+name: Final TXT Fixer
 
 on:
   workflow_dispatch:
@@ -16,119 +16,76 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Delete Old Utils Generator
+      - name: 2. Remove Old Duplicate Files
         run: |
-          echo "🗑️ Deleting old utils generator if it exists..."
+          echo "🗑️ Removing old files..."
           rm -f "Firent/service_api/utils/Txt ripo generator.py"
-          echo "✅ Deleted."
+          rm -f "Firent/system_service/TG_report/Ripo_txt_tg.py"
+          echo "✅ Old files removed."
 
-      - name: 3. Write New VIP Generator
+      - name: 3. Copy & Upgrade VIP Generator
         run: |
-          echo "📝 Writing new VIP Report Generator in system_service..."
-          mkdir -p "Firent/system_service/TG_report"
-          cat << 'ENDOFCODE' > "Firent/system_service/TG_report/Ripo_txt_tg.py"
-# Ripo_txt_tg.py - VIP Production Generator
-import os
-import sys
-import datetime
+          echo "📦 Creating single VIP Generator..."
+          # Pehle se jo file thi usko copy karke naya code daal rahe hain
+          # Isse lamba YAML error kabhi nahi aayega
+          
+          cat << 'ENDOFCODE' > "Firent/Ripo_txt_tg.py"
+import os, sys, datetime, requests
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-try:
-    from TG_sender import send_document, build_caption
-except ImportError:
-    def send_document(*args, **kwargs): print("⚠️ TG_sender not found, skipping send.")
-    def build_caption(*args): return "VIP Production Report"
-
-OUTPUT_FILE = os.environ.get("REPORT_FILE", "production_report.txt")
-MAX_FILE_SIZE = 5 * 1024 * 1024
-
-SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build", ".pytest_cache", ".mypy_cache"}
-SKIP_FILES = {OUTPUT_FILE, ".DS_Store", "Thumbs.db"}
-TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".html", ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml", ".toml", ".ini"}
-
-def is_text(path):
-    return os.path.splitext(path)[1].lower() in TEXT_EXTS
-
-def get_files(base):
-    files = []
-    if not os.path.isdir(base):
-        return files
-    for root, dirs, fs in os.walk(base, followlinks=False):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-        for f in fs:
-            if f in SKIP_FILES: continue
-            p = os.path.join(root, f)
-            if is_text(p):
-                files.append((os.path.normpath(p), p))
-    return files
+OUTPUT_FILE = "production_report.txt"
+TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".html", ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
 
 def main():
-    repos = ["Firent", "Backend"]
     all_files = []
-    
-    for repo in repos:
-        all_files.extend(get_files(repo))
-
-    if not all_files:
-        print("❌ No text files found.")
-        sys.exit(1)
+    for repo in ["Firent", "Backend"]:
+        if os.path.isdir(repo):
+            for root, dirs, fs in os.walk(repo):
+                dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+                for f in fs:
+                    p = os.path.join(root, f)
+                    if os.path.splitext(p)[1].lower() in TEXT_EXTS:
+                        all_files.append((os.path.normpath(p), p))
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("╔══════════════════════════════════════════════════════════╗\n")
-        f.write("║       👑 VIP PRODUCTION CODE REPORT 👑                   ║\n")
+        f.write("║       👑 VIP PRODUCTION REPORT 👑                        ║\n")
         f.write("╚══════════════════════════════════════════════════════════╝\n\n")
-        f.write(f"⏱️ Date/Time : {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
-        f.write(f"📂 Total Files : {len(all_files)}\n")
-        f.write("🌐 Repos: Firent + Backend\n")
-        f.write("━" * 60 + "\n\n📑 INDEX\n" + "━" * 60 + "\n")
-
-        for idx, (_, disp) in enumerate(all_files, 1):
-            f.write(f"{idx:02d}. {disp}\n")
-        f.write("━" * 60 + "\n\n")
-
+        f.write(f"Total Files: {len(all_files)}\n\n")
+        
         for full, disp in all_files:
             try:
-                if os.path.getsize(full) > MAX_FILE_SIZE: continue
-                f.write(f"\n{'=' * 60}\n📄 FILE: {disp}\n{'=' * 60}\n")
+                f.write(f"\n{'='*60}\n📄 FILE: {disp}\n{'='*60}\n")
                 with open(full, "r", encoding="utf-8", errors="ignore") as src:
                     for i, line in enumerate(src.read().split("\n"), 1):
                         f.write(f"{i:03d} | {line}\n")
-                f.write("\n")
-            except Exception as e:
-                print(f"Error: {disp} -> {e}")
+            except: pass
 
-    size_mb = os.path.getsize(OUTPUT_FILE) / (1024 * 1024)
-    print(f"✅ Generated: {OUTPUT_FILE} ({size_mb:.2f} MB)")
-    
-    send_document(
-        token=os.environ.get("BOT_TOKEN"),
-        chat_id=os.environ.get("CHAT_ID"),
-        filepath=OUTPUT_FILE,
-        caption=build_caption("📂 VIP Production Report", len(all_files), size_mb)
-    )
-    return 0
+    token = os.environ.get("BOT_TOKEN")
+    chat_id = os.environ.get("CHAT_ID")
+    if token and chat_id:
+        url = f"https://api.telegram.org/bot{token}/sendDocument"
+        with open(OUTPUT_FILE, "rb") as f:
+            requests.post(url, data={"chat_id": chat_id, "caption": "👑 VIP Report"}, files={"document": f})
+        print("✅ Sent to Telegram!")
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
 ENDOFCODE
-          echo "✅ File generated perfectly."
+          echo "✅ Created successfully."
 
-      - name: 4. Update Universal Master YML
+      - name: 4. Update Workflow Path
         run: |
-          echo "📝 Updating workflow references..."
-          YML_FILE="Firent/.github/workflows/universal_master.yml"
-          if [ -f "$YML_FILE" ]; then
-            sed -i 's|GEN=$(find Firent/service_api/utils -type f -name "Txt ripo generator.py" | head -n1)|GEN=$(find Firent/system_service/TG_report -name "Ripo_txt_tg.py" | head -n1)|' "$YML_FILE" || true
-            echo "✅ YML updated successfully."
-          else
-            echo "⚠️ Universal master YML not found, skipping reference update."
-          fi
+          echo "📝 Updating workflow..."
+          # Sed ka use bina kisi syntax error ke
+          sed -i "s|service_api/utils/Txt ripo generator.py|Ripo_txt_tg.py|g" "Firent/.github/workflows/universal_master.yml"
+          sed -i "s|system_service/TG_report/Ripo_txt_tg.py|Ripo_txt_tg.py|g" "Firent/.github/workflows/universal_master.yml"
+          echo "✅ Workflow updated."
 
-      - name: 5. Commit and Push Safely
+      - name: 5. Commit and Push
         run: |
-          git config --global user.name "Cleanup Bot"
+          git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
-          git pull origin ${{ github.ref_name }} --rebase || echo "No remote changes to pull"
           git add .
-          git commit -m "Final Fix: VIP TXT Generator created cleanly & YML updated" || echo "No changes to commit"
+          git commit -m "Fix: Single Root VIP TXT Generator" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
