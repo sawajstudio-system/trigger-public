@@ -1,0 +1,294 @@
+name: master
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Choose task or test to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'Git Clean'
+          - 'Ripo TXT'
+          - 'Ripo ZIP'
+          - 'report_only'
+          - 'image_creator'
+          - 'cloudinary_16_test'
+          - 'tanvo_17_test'
+          - 'magic_14_test'
+          - 'media_10_test'
+          - 'pixabay_11_test'
+          - 'pexels_12_test'
+          - 'coverr_13_test'
+          - 'telegram_02_test'
+          - 'github_03_test'
+          - 'gemini_04_test'
+          - 'groq_06_test'
+          - 'openrouter_05_test'
+          - 'nvidia_07_test'
+          - 'cloudflare_08_test'
+          - 'cohere_09_test'
+          - 'anges_15_test'
+
+concurrency:
+  group: supercharged-master-${{ github.ref }}-${{ inputs.task }}
+  cancel-in-progress: false
+
+jobs:
+  master_execution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: write
+      contents: read
+
+    env:
+      REPORT_FILE: 'production_report'
+      BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+      TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+      TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+      GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      ANGES_API_KEY: ${{ secrets.ANGES_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
+      MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+
+    steps:
+      # ==========================================================
+      # CHECKOUTS
+      # ==========================================================
+      - name: 1. Checkout Firent Repo
+        uses: actions/checkout@v4
+        with:
+          path: 'Firent'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Checkout Backend Repo
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          continue-on-error: true
+
+      - name: 3. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 4. Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "requests>=2.31.0,<3.0.0"
+          pip install pytest || true
+
+      # ==========================================================
+      # DIAGNOSTIC (always runs, prints environment truth)
+      # ==========================================================
+      - name: 5. Diagnostic — Repo Layout
+        run: |
+          echo "::group::Workspace"
+          ls -la
+          echo "::endgroup::"
+          echo "::group::Firent"
+          ls -la Firent/ || echo "Firent missing!"
+          echo "::endgroup::"
+          echo "::group::Firent/service_api"
+          ls -la Firent/service_api/ || echo "service_api missing!"
+          echo "::endgroup::"
+          echo "::group::run_all_tests.py presence"
+          find Firent -maxdepth 3 -name "run_all_tests.py" -print || true
+          echo "::endgroup::"
+          echo "::group::All test-like python files"
+          find Firent -type f -name "*.py" | grep -iE "test|runner" | sort | head -100 || true
+          echo "::endgroup::"
+
+      # ==========================================================
+      # TASK: Git Clean
+      # ==========================================================
+      - name: 🧹 Run Git Cleanup
+        if: github.event.inputs.task == 'Git Clean'
+        env:
+          REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          MAX_RUNS: '500'
+        run: |
+          set -euo pipefail
+          FILE=$(find Firent -maxdepth 4 -name "cleanup.py" -path "*Git_clean*" | head -n1)
+          if [ -z "$FILE" ]; then
+            echo "❌ cleanup.py not found"; find Firent -name "cleanup*.py"; exit 1
+          fi
+          echo "✅ Running: $FILE"
+          python3 "$FILE"
+
+      # ==========================================================
+      # TASK: Ripo TXT
+      # ==========================================================
+      - name: 📄 Run Ripo TXT Generator & Sender
+        if: github.event.inputs.task == 'Ripo TXT'
+        run: |
+          set -euo pipefail
+          FILE=$(find Firent -maxdepth 5 -name "Ripo_txt_tg.py" | head -n1)
+          if [ -z "$FILE" ]; then
+            echo "❌ Ripo_txt_tg.py not found"; find Firent -name "*Ripo*"; exit 1
+          fi
+          echo "✅ Running: $FILE"
+          python3 "$FILE"
+
+      # ==========================================================
+      # TASK: Ripo ZIP
+      # ==========================================================
+      - name: 🗜️ Run Ripo ZIP Pack & Sender
+        if: github.event.inputs.task == 'Ripo ZIP'
+        run: |
+          set -euo pipefail
+          FILE=$(find Firent -maxdepth 5 -name "Ripo_zip_tg.py" | head -n1)
+          if [ -z "$FILE" ]; then
+            echo "❌ Ripo_zip_tg.py not found"; find Firent -name "*Ripo*"; exit 1
+          fi
+          echo "✅ Running: $FILE"
+          python3 "$FILE"
+
+      # ==========================================================
+      # TASK: Report Only
+      # ==========================================================
+      - name: 📋 Generate Code Report Only
+        if: github.event.inputs.task == 'report_only'
+        run: |
+          set -euo pipefail
+          GEN=$(find Firent -maxdepth 6 -type f -name "Txt ripo generator.py" | head -n1)
+          if [ -z "$GEN" ]; then
+            echo "❌ 'Txt ripo generator.py' not found"; find Firent -name "*ripo*generator*"; exit 1
+          fi
+          GEN_DIR=$(dirname "$GEN")
+          echo "✅ Generator: $GEN (cwd: $GEN_DIR)"
+
+          # snapshot .txt files before
+          BEFORE=$(find . -name "*.txt" -newermt '1970-01-01' | sort)
+
+          ( cd "$GEN_DIR" && python "Txt ripo generator.py" )
+
+          shopt -s nullglob
+          FOUND=0
+          # collect new .txt files from generator dir + repo root
+          for file in "$GEN_DIR"/*.txt ./*.txt; do
+            [ -f "$file" ] || continue
+            echo "📤 Uploading: $file"
+            curl -sS --fail-with-body --retry 5 --retry-delay 3 --retry-all-errors \
+              -F "chat_id=$TELEGRAM_API_REPORT_CHAT_ID" \
+              -F "document=@$file" \
+              -F "caption=📂 [PRODUCTION] Report: $(basename "$file")" \
+              "https://api.telegram.org/bot$TELEGRAM_API_REPORT_TOKEN/sendDocument" \
+              && FOUND=$((FOUND+1)) || echo "⚠️ Upload failed: $file"
+          done
+          echo "✅ Uploaded $FOUND file(s)."
+          [ "$FOUND" -gt 0 ] || { echo "❌ No .txt files produced"; exit 1; }
+
+      # ==========================================================
+      # TASK: AI Tests & Runners
+      # ==========================================================
+      - name: 🚀 Run AI Tests / Master Runner
+        if: >-
+          github.event.inputs.task != 'Git Clean' &&
+          github.event.inputs.task != 'Ripo TXT' &&
+          github.event.inputs.task != 'Ripo ZIP' &&
+          github.event.inputs.task != 'report_only'
+        working-directory: Firent/service_api
+        env:
+          TARGET: ${{ github.event.inputs.task }}
+        run: |
+          set -euo pipefail
+          echo "🎯 TARGET=$TARGET"
+          echo "📁 CWD=$(pwd)"
+          ls -la
+
+          if [ "$TARGET" = "all" ]; then
+            if [ -f run_all_tests.py ]; then
+              echo "🚀 Running master: run_all_tests.py"
+              python run_all_tests.py
+              exit $?
+            fi
+            echo "⚠️ run_all_tests.py missing — falling back to pytest discovery"
+            python -m pytest -v --maxfail=0 . || python -m unittest discover -v
+            exit 0
+          fi
+
+          echo "🔎 Resolving test file for '$TARGET'..."
+          # Try exact, loose, and suffix-stripped variants
+          STRIPPED="${TARGET%_test}"
+          CANDIDATES=$(find . -type f -name "*.py" \( \
+              -name "${TARGET}.py" \
+              -o -name "${TARGET}*.py" \
+              -o -name "*${TARGET}*.py" \
+              -o -name "${STRIPPED}.py" \
+              -o -name "*${STRIPPED}*.py" \
+            \) 2>/dev/null | sort -u)
+
+          if [ -z "$CANDIDATES" ]; then
+            echo "❌ No file matched '$TARGET'."
+            echo "::group::Available test files"
+            find . -type f -name "*.py" | grep -iE "test" | sort
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          echo "::group::Candidates"
+          echo "$CANDIDATES"
+          echo "::endgroup::"
+
+          FILE=$(echo "$CANDIDATES" | head -n1)
+          echo "✅ Selected: $FILE"
+          python "$FILE"
+
+      # ==========================================================
+      # ARTIFACTS (upload whatever .txt/.log produced)
+      # ==========================================================
+      - name: 📦 Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-${{ github.event.inputs.task }}-${{ github.run_id }}
+          path: |
+            **/*.txt
+            **/*.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # ==========================================================
+      # SUMMARY (always)
+      # ==========================================================
+      - name: 🧾 Job Summary
+        if: always()
+        run: |
+          {
+            echo "## 🚀 Master Run Summary"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Task | \`${{ github.event.inputs.task }}\` |"
+            echo "| Status | \`${{ job.status }}\` |"
+            echo "| Run ID | \`${{ github.run_id }}\` |"
+            echo "| Ref | \`${{ github.ref }}\` |"
+            echo "| Actor | \`${{ github.actor }}\` |"
+            echo "| Time | $(date -u +%Y-%m-%dT%H:%M:%SZ) |"
+          } >> "$GITHUB_STEP_SUMMARY"
