@@ -25,13 +25,12 @@ jobs:
           rm -f "Firent/.github/workflows/One-Time.yml"
           echo "✅ Old files removed."
 
-      - name: 3. Create VIP Generator Safely (No YAML Errors)
+      - name: 3. Create VIP Generator Safely
         run: |
           echo "📦 Creating VIP Generator safely..."
           FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"
           mkdir -p "Firent/system_service/TG_report"
           
-          # Hum YML mein code nahi likh rahe, bas bash se lines bana rahe hain
           echo "import os, sys, requests" > "$FILE"
           echo "OUTPUT_FILE = 'production_report.txt'" >> "$FILE"
           echo "TEXT_EXTS = {'.py', '.txt', '.yml', '.yaml', '.md', '.json', '.css', '.js', '.sh'}" >> "$FILE"
@@ -53,19 +52,36 @@ jobs:
           echo "t = os.environ.get('BOT_TOKEN'); c = os.environ.get('CHAT_ID')" >> "$FILE"
           echo "if t and c:" >> "$FILE"
           echo "    requests.post(f'https://api.telegram.org/bot{t}/sendDocument', data={'chat_id': c, 'caption': 'VIP Report'}, files={'document': open(OUTPUT_FILE, 'rb')})" >> "$FILE"
-          
           echo "✅ File generated perfectly."
 
-      - name: 4. Update Path in Workflow
+      - name: 4. Update Path in Workflow (Fixing Emoji Error)
         run: |
           echo "📝 Updating path..."
-          sed -i 's|FILE="Firent/Ripo_txt_tg.py"|FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"|g' "Firent/.github/workflows/🌐universal_master.yml"
-          echo "✅ Path updated."
+          # Sed nahi chalayenge kyunki emoji ki wajah se error aa raha hai
+          # Hum python ka use karke file dhoondhenge aur update karenge
+          
+          python3 -c "
+import glob, os
+files = glob.glob('Firent/.github/workflows/*.yml')
+for f in files:
+    if 'universal_master' in f or 'One-Time' in f:
+        print(f'Found: {f}')
+        with open(f, 'r') as file:
+            content = file.read()
+        
+        # Path update karo
+        content = content.replace('FILE=\"Firent/Ripo_txt_tg.py\"', 'FILE=\"Firent/system_service/TG_report/Ripo_txt_tg.py\"')
+        
+        with open(f, 'w') as file:
+            file.write(content)
+        print(f'✅ Updated {f}')
+"
+          echo "✅ Paths updated."
 
       - name: 5. Commit and Push
         run: |
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Final Fix: Created VIP generator using bash echo" || echo "No changes"
+          git commit -m "Final Fix: Updated path and removed emojis from sed" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
