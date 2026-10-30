@@ -1,10 +1,10 @@
-name: Auto Rename 03 File
+name: Final Cleanup
 
 on:
   workflow_dispatch:
 
 jobs:
-  fix_number:
+  cleanup:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -16,34 +16,81 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Rename File Automatically
+      - name: 2. Delete Duplicates
         run: |
-          echo "🔄 Renaming file..."
-          OLD_FILE="Firent/service_api/utils/github_03_token_test.py"
-          NEW_FILE="Firent/service_api/utils/github_token_test.py"
-          
-          if [ -f "$OLD_FILE" ]; then
-            git mv "$OLD_FILE" "$NEW_FILE"
-            echo "✅ File successfully renamed to github_token_test.py"
-          else
-            echo "⚠️ File not found, maybe already renamed."
-          fi
+          echo "🗑️ Deleting old files..."
+          rm -f "Firent/service_api/utils/Txt ripo generator.py"
+          rm -f "Firent/service_api/utils/github_03_token_test.py"
+          rm -f "Firent/.github/workflows/One-Time File.yml"
+          rm -f "Firent/.github/workflows/One-Time.yml"
+          echo "✅ Old duplicates removed."
 
-      - name: 3. Update Universal Master YML
+      - name: 3. Fix system_service/Ripo_txt_tg.py (VIP Generator)
         run: |
-          echo "📝 Updating YML..."
-          YML_FILE="Firent/.github/workflows/universal_master.yml"
-          
-          if [ -f "$YML_FILE" ]; then
-            # Replaces the old option name with the new one
-            sed -i 's/github_03_token_test/github_token_test/g' "$YML_FILE"
-            echo "✅ YML updated!"
-          fi
+          echo "📝 Writing new VIP Report Generator in system_service..."
+          cat << 'ENDOFCODE' > "Firent/system_service/TG_report/Ripo_txt_tg.py"
+import os, sys, datetime, requests
 
-      - name: 4. Commit and Push
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from TG_sender import send_document, build_caption
+except ImportError:
+    def send_document(*args, **kwargs): pass
+    def build_caption(*args, **kwargs): return "VIP Report"
+
+OUTPUT_FILE = "production_report.txt"
+TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".html", ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
+
+def main():
+    all_files = []
+    for repo in ["Firent", "Backend"]:
+        if os.path.isdir(repo):
+            for root, dirs, fs in os.walk(repo):
+                dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+                for f in fs:
+                    p = os.path.join(root, f)
+                    if os.path.splitext(p)[1].lower() in TEXT_EXTS:
+                        all_files.append((os.path.normpath(p), p))
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write("╔══════════════════════════════════════════════════════════╗\n")
+        f.write("║       👑 VIP PRODUCTION REPORT 👑                        ║\n")
+        f.write("╚══════════════════════════════════════════════════════════╝\n\n")
+        f.write(f"Total Files: {len(all_files)}\n\n")
+        
+        for full, disp in all_files:
+            try:
+                f.write(f"\n{'='*60}\n📄 FILE: {disp}\n{'='*60}\n")
+                with open(full, "r", encoding="utf-8", errors="ignore") as src:
+                    for i, line in enumerate(src.read().split("\n"), 1):
+                        f.write(f"{i:03d} | {line}\n")
+            except: pass
+
+    token = os.environ.get("BOT_TOKEN")
+    chat_id = os.environ.get("CHAT_ID")
+    if token and chat_id:
+        url = f"https://api.telegram.org/bot{token}/sendDocument"
+        with open(OUTPUT_FILE, "rb") as f:
+            requests.post(url, data={"chat_id": chat_id, "caption": "👑 VIP Report"}, files={"document": f})
+        print("✅ Sent to Telegram!")
+
+if __name__ == "__main__":
+    main()
+ENDOFCODE
+          echo "✅ VIP Generator created successfully."
+
+      - name: 4. Update Universal Master YML
+        run: |
+          echo "📝 Updating universal_master.yml..."
+          # Yahan hum sahi path set kar rahe hain
+          sed -i 's|FILE="Firent/Ripo_txt_tg.py"|FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"|g' "Firent/.github/workflows/🌐universal_master.yml"
+          echo "✅ YML updated."
+
+      - name: 5. Commit and Push
         run: |
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto-Rename: github_03_token_test to github_token_test" || echo "No changes"
+          git commit -m "Final cleanup: Removed duplicates & fixed paths" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
