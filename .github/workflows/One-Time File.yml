@@ -1,4 +1,4 @@
-name: Final Fixer
+name: Final Safe Fixer
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Delete Old Duplicate Files
+      - name: 2. Delete Old Duplicates
         run: |
           echo "🗑️ Deleting old files..."
           rm -f "Firent/service_api/utils/Txt ripo generator.py"
@@ -25,21 +25,36 @@ jobs:
           rm -f "Firent/.github/workflows/One-Time.yml"
           echo "✅ Old files removed."
 
-      - name: 3. Download Fresh VIP Generator from Raw Link
+      - name: 3. Create VIP Generator Safely (No YAML Errors)
         run: |
-          echo "📦 Downloading fresh VIP Generator..."
+          echo "📦 Creating VIP Generator safely..."
+          FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"
           mkdir -p "Firent/system_service/TG_report"
           
-          # Yahan hum direct raw link se file download kar rahe hain
-          curl -sL "https://raw.githubusercontent.com/sawajstudio-system/Backend/main/Ripo_txt_tg.py" -o "Firent/system_service/TG_report/Ripo_txt_tg.py"
+          # Hum YML mein code nahi likh rahe, bas bash se lines bana rahe hain
+          echo "import os, sys, requests" > "$FILE"
+          echo "OUTPUT_FILE = 'production_report.txt'" >> "$FILE"
+          echo "TEXT_EXTS = {'.py', '.txt', '.yml', '.yaml', '.md', '.json', '.css', '.js', '.sh'}" >> "$FILE"
+          echo "files = []" >> "$FILE"
+          echo "for repo in ['Firent', 'Backend']:" >> "$FILE"
+          echo "    if os.path.isdir(repo):" >> "$FILE"
+          echo "        for root, dirs, fs in os.walk(repo):" >> "$FILE"
+          echo "            dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules'}]" >> "$FILE"
+          echo "            for f in fs:" >> "$FILE"
+          echo "                p = os.path.join(root, f)" >> "$FILE"
+          echo "                if os.path.splitext(p)[1].lower() in TEXT_EXTS: files.append((p,p))" >> "$FILE"
+          echo "with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:" >> "$FILE"
+          echo "    f.write('👑 VIP PRODUCTION REPORT\n\n')" >> "$FILE"
+          echo "    for _, p in files:" >> "$FILE"
+          echo "        try:" >> "$FILE"
+          echo "            f.write(f'\n{\"=\"*60}\nFILE: {p}\n{\"=\"*60}\n')" >> "$FILE"
+          echo "            f.write(open(p, 'r', encoding='utf-8', errors='ignore').read())" >> "$FILE"
+          echo "        except: pass" >> "$FILE"
+          echo "t = os.environ.get('BOT_TOKEN'); c = os.environ.get('CHAT_ID')" >> "$FILE"
+          echo "if t and c:" >> "$FILE"
+          echo "    requests.post(f'https://api.telegram.org/bot{t}/sendDocument', data={'chat_id': c, 'caption': 'VIP Report'}, files={'document': open(OUTPUT_FILE, 'rb')})" >> "$FILE"
           
-          # Verify karte hain ki file download hui ya nahi
-          if [ -s "Firent/system_service/TG_report/Ripo_txt_tg.py" ]; then
-            echo "✅ File downloaded successfully."
-          else
-            echo "❌ Download failed or file is empty."
-            exit 1
-          fi
+          echo "✅ File generated perfectly."
 
       - name: 4. Update Path in Workflow
         run: |
@@ -52,5 +67,5 @@ jobs:
           git config --global user.name "Fixer Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Final Fix: Downloaded VIP Generator from raw link" || echo "No changes"
+          git commit -m "Final Fix: Created VIP generator using bash echo" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
