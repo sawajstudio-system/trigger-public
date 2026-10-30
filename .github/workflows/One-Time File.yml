@@ -16,7 +16,7 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Delete Old Files
+      - name: 2. Delete Old Duplicate Files
         run: |
           echo "🗑️ Deleting old files..."
           rm -f "Firent/service_api/utils/Txt ripo generator.py"
@@ -25,36 +25,46 @@ jobs:
           rm -f "Firent/.github/workflows/One-Time.yml"
           echo "✅ Old files removed."
 
-      - name: 3. Create New VIP Generator
+      - name: 3. Download Fresh VIP Generator
         run: |
-          echo "📦 Creating VIP Generator..."
-          # Hum direct bash ki command se file bana rahe hain, YML mein lamba code nahi likh rahe
-          touch "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "# VIP Generator" > "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "import os, sys, requests" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "OUTPUT_FILE = 'production_report.txt'" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "SKIP_DIRS = {'.git', '__pycache__', 'node_modules'}" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "TEXT_EXTS = {'.py', '.txt', '.yml', '.yaml', '.md', '.json', '.css', '.js', '.sh'}" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "files = []" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "for repo in ['Firent', 'Backend']:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "    for root, dirs, fs in os.walk(repo):" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "        for f in fs:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "            p = os.path.join(root, f)" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "            if os.path.splitext(p)[1].lower() in TEXT_EXTS: files.append((p,p))" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "    f.write('👑 VIP PRODUCTION REPORT\n\n')" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "    for _, p in files:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "        try:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "            f.write('\n'+'='*60+'\nFILE: '+p+'\n'+'='*60+'\n')" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "            f.write(open(p, 'r', encoding='utf-8', errors='ignore').read())" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "        except: pass" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "t = os.environ.get('BOT_TOKEN'); c = os.environ.get('CHAT_ID')" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "if t and c:" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "    requests.post(f'https://api.telegram.org/bot{t}/sendDocument', data={'chat_id': c}, files={'document': open(OUTPUT_FILE, 'rb')})" >> "Firent/system_service/TG_report/Ripo_txt_tg.py"
-          echo "✅ Created successfully."
+          echo "📦 Downloading fresh VIP Generator..."
+          # GitHub se direct fresh code file utha kar rahe hain (Koi syntax error nahi aayega)
+          mkdir -p "Firent/system_service/TG_report"
+          curl -sL "https://raw.githubusercontent.com/sawajstudio-system/Backend/main/Ripo_txt_tg.py" -o "Firent/system_service/TG_report/Ripo_txt_tg.py" || echo "Fallback..."
+          
+          # Agar upar wala fail ho, toh ek simple Python code se file bana lenge
+          if [ ! -s "Firent/system_service/TG_report/Ripo_txt_tg.py" ]; then
+            python3 -c "
+import os
+code = '''import os, sys, requests
+OUTPUT_FILE = \"production_report.txt\"
+TEXT_EXTS = {\".py\", \".txt\", \".yml\", \".yaml\", \".md\", \".json\"}
+files = []
+for repo in [\"Firent\", \"Backend\"]:
+    if os.path.isdir(repo):
+        for root, dirs, fs in os.walk(repo):
+            dirs[:] = [d for d in dirs if d not in {\".git\", \"__pycache__\"}]
+            for f in fs:
+                p = os.path.join(root, f)
+                if os.path.splitext(p)[1].lower() in TEXT_EXTS: files.append((p,p))
+with open(OUTPUT_FILE, \"w\", encoding=\"utf-8\") as f:
+    f.write(\"VIP PRODUCTION REPORT\\n\\n\")
+    for _, p in files:
+        try:
+            f.write(f\"\\n{'='*60}\\nFILE: {p}\\n{'='*60}\\n\")
+            f.write(open(p, \"r\", encoding=\"utf-8\", errors=\"ignore\").read())
+        except: pass
+t = os.environ.get(\"BOT_TOKEN\"); c = os.environ.get(\"CHAT_ID\")
+if t and c:
+    requests.post(f\"https://api.telegram.org/bot{t}/sendDocument\", data={\"chat_id\": c}, files={\"document\": open(OUTPUT_FILE, \"rb\")})
+'''
+with open('Firent/system_service/TG_report/Ripo_txt_tg.py', 'w') as f:
+    f.write(code)
+"
+          fi
+          echo "✅ File generated perfectly."
 
-      - name: 4. Update YML Path
+      - name: 4. Update Path in Workflow
         run: |
           echo "📝 Updating path..."
           sed -i 's|FILE="Firent/Ripo_txt_tg.py"|FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"|g' "Firent/.github/workflows/🌐universal_master.yml"
