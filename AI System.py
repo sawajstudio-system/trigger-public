@@ -3,27 +3,29 @@ import requests
 import time
 import re
 
-print("🚀 AI System Started (Correct Path Version)...")
+print("🚀 AI System Started (Error-Free Version)...")
 
-# ✅ Yahan se 'Firent/' hata diya hai
+# ✅ Sahi Path (Bina Firent/ ke)
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
 token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
 chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
 
+# A se Z tak loop
 for i in range(26):
     letter = chr(65 + i) # A, B, C... Z
     folder_path = os.path.join(base_dir, letter)
-    os.makedirs(folder_path, exist_ok=True)
-    
-    print(f"\n🔄 Processing Folder: {letter} ({i+1}/26)")
-    
-    prompt = f"Give me 1 real, working open-source API URL for '{letter}'. Format strictly: Category|URL. No extra text."
-    url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
     
     try:
-        res = requests.get(url, timeout=60)
+        os.makedirs(folder_path, exist_ok=True)
+        print(f"\n🔄 Processing Folder: {letter} ({i+1}/26)")
+        
+        prompt = f"Give me 1 real, working open-source API URL for '{letter}'. Format strictly: Category|URL. No extra text."
+        url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
+        
+        # AI se URL mangwana
+        res = requests.get(url, timeout=30)
         ai_response = res.text
         
         if '|' in ai_response:
@@ -33,25 +35,24 @@ for i in range(26):
             
             if api_url.startswith("http"):
                 print(f"🔍 Testing URL: {api_url}")
+                
+                # LIVE CHECK (Yahan error aane par script nahi rukegi)
                 try:
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     
                     if test.status_code in [200, 201, 202]:
-                        # URL ki Jankari (Title & Description)
-                        url_title = "No Title Found"
-                        url_desc = "No Description Found"
-                        
+                        # URL Details
+                        url_title = "No Title"
+                        url_desc = "No Description"
                         try:
                             html = test.text
                             title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
-                            if title_match:
-                                url_title = title_match.group(1).strip()
+                            if title_match: url_title = title_match.group(1).strip()
                             
                             desc_match = re.search(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
                             if not desc_match:
                                 desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
-                            if desc_match:
-                                url_desc = desc_match.group(1).strip()
+                            if desc_match: url_desc = desc_match.group(1).strip()
                         except:
                             pass
                         
@@ -74,7 +75,7 @@ if __name__ == "__main__": run_test()
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
                         
-                        # Telegram Message with Details
+                        # 1 URL = 1 Telegram Message
                         if token and chat_id:
                             msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n"
                             msg += f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -86,12 +87,20 @@ if __name__ == "__main__": run_test()
                             msg += f"📊 <b>Status:</b> {test.status_code}"
                             requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
                     else:
-                        print(f"❌ FAILED: Status {test.status_code}")
+                        print(f"❌ URL Failed (Status {test.status_code}). Moving to next...")
+                        
                 except Exception as e:
-                    print(f"❌ NETWORK ERROR: {e}")
+                    print(f"⚠️ Testing Error: {e}. Moving to next...")
+            else:
+                print("⚠️ AI gave invalid URL format. Moving to next...")
+        else:
+            print("⚠️ AI response was not in correct format. Moving to next...")
+            
     except Exception as e:
-        print(f"❌ AI Error: {e}")
-    
-    time.sleep(3)
+        # Agar AI se hi response na aaye, toh bhi loop rukega nahi
+        print(f"❌ AI Network Error: {e}. Moving to next folder...")
+        
+    # 2 second ruko (Telegram rate limit se bachne ke liye)
+    time.sleep(2)
 
-print("\n🎉 26 URLs Process Complete!")
+print("\n🎉 Saare 26 Folders ka Process Complete! Run again manually to add more.")
