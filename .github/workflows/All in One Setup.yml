@@ -25,5 +25,5 @@ jobs:
           git config --global user.name "AllInOne Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto-Setup: Added all real platforms via All in one script" || echo "No changes"
+          git commit -m "Auto-Setup: Fixed double folders & Added real platforms" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
