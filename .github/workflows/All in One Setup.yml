@@ -1,10 +1,10 @@
-name: AI System Builder
+name: Clean Wrong Folder
 
 on:
   workflow_dispatch:
 
 jobs:
-  ai_build:
+  clean:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -16,14 +16,16 @@ jobs:
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Run AI System
+      - name: 2. Delete Wrong Firent Folder
         run: |
-          python "AI System.py"
+          echo "🗑️ Deleting wrong Firent/Firent folder..."
+          rm -rf Firent/Firent
+          echo "✅ Deleted!"
 
       - name: 3. Commit and Push
         run: |
-          git config --global user.name "AI System Bot"
+          git config --global user.name "Cleanup Bot"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Feat: AI System generated and verified new URLs" || echo "No changes"
+          git commit -m "Cleanup: Removed wrong double Firent folder" || echo "No changes"
           git push origin HEAD:${{ github.ref_name }}
