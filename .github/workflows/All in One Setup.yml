@@ -1,0 +1,29 @@
+name: All in One Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Run All-in-One Python Script
+        run: |
+          python "All in one.py"
+
+      - name: 3. Commit and Push Changes
+        run: |
+          git config --global user.name "AllInOne Bot"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Auto-Setup: Added all real platforms via All in one script" || echo "No changes"
+          git push origin HEAD:${{ github.ref_name }}
