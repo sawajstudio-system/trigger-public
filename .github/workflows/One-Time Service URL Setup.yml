@@ -1,37 +1,287 @@
-name: 1Time Service URL Setup
+name: Universal 
 
 on:
   workflow_dispatch:
+    inputs:
+      task:
+        description: 'Choose task or test to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - 'all'
+          - 'all_url_tests'
+          - 'Git Clean'
+          - 'Ripo ZIP'
+          - 'report_only'
+          - 'cloudinary_test'
+          - 'tanvo_test'
+          - 'magic_test'
+          - 'media_test'
+          - 'pixabay_test'
+          - 'pexels_test'
+          - 'coverr_test'
+          - 'telegram_bot_test'
+          - 'github_token_test'
+          - 'gemini_test'
+          - 'groq_test'
+          - 'openrouter_test'
+          - 'nvidia_test'
+          - 'cloudflare_test'
+          - 'cohere_test'
+          - 'anges_test'
+          # URL TESTS (Bina API Key)
+          - 'pollinations_image_test'
+          - 'veida_test'
+          - 'stable_diffusion_test'
+          - 'invokeai_test'
+          - 'kavel_test'
+          - 'together_flux_test'
+          - 'ai_image_editor_test'
+          - 'flux_anime_test'
+          - 'dalle3_test'
+          - 'sd3_test'
+          - 'tts_studio_test'
+          - 'kokoro_test'
+          - 'edge_tts_test'
+          - 'wavhost_test'
+          - 'mizuoto_test'
+          - 'plapre_test'
+          - 'phonon_tts_test'
+          - 'aloud_test'
+          - 'speechma_test'
+          - 'readanytext_test'
+          - 'phane_test'
+          - 'kupkaprod_test'
+          - 'chainstreet_test'
+          - 'automated_video_gen_test'
+          - 'hailuo_local_test'
+          - 'pexels_url_test'
+          - 'pixabay_url_test'
+          - 'mixkit_test'
+          - 'coverr_test'
+          - 'librestock_test'
+          - 'localmind_test'
+          - 'aether_test'
+          - 'aparte_test'
+          - 'twin_o_matic_test'
+          - 'dulus_test'
+          - 'pollinations_chat_test'
+          - 'duck_ai_test'
+          - 'askai_test'
+          - 'llm_browser_test'
+          - 'unee_test'
+
+concurrency:
+  group: supercharged-master-${{ github.ref }}-${{ inputs.task }}
+  cancel-in-progress: false
 
 jobs:
-  run_setup:
+  master_execution:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
-      contents: write
-    
+      actions: write
+      contents: read
+
+    env:
+      REPORT_FILE: 'production_report.txt'
+      BOT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+      TELEGRAM_API_REPORT_TOKEN: ${{ secrets.TELEGRAM_API_REPORT_TOKEN }}
+      TELEGRAM_API_REPORT_CHAT_ID: ${{ secrets.TELEGRAM_API_REPORT_CHAT_ID }}
+      TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+      GH_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+      ANGES_API_KEY: ${{ secrets.ANGES_API_KEY }}
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      COVERR_API_KEY: ${{ secrets.COVERR_API_KEY }}
+      MAGICHOUR_API_KEY: ${{ secrets.MAGICHOUR_API_KEY }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      TANVO_API_KEY: ${{ secrets.TANVO_API_KEY }}
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: 'Firent/service_api:Firent/service_api/integrations:Firent/service_url'
+
     steps:
-      - name: 1. Checkout Code
+      - name: 1. Checkout Firent Repo
         uses: actions/checkout@v4
         with:
+          path: 'Firent'
           token: ${{ secrets.TOKEN_GITHUB }}
           fetch-depth: 0
 
-      - name: 2. Run 1time.py
+      - name: 2. Checkout Backend Repo
+        uses: actions/checkout@v4
+        with:
+          repository: 'sawajstudio-system/Backend'
+          path: 'Backend'
+          token: ${{ secrets.TOKEN_GITHUB }}
+          continue-on-error: true
+
+      - name: 3. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 4. Install Dependencies
         run: |
-          if [ -f "1time.py" ]; then
-            python 1time.py
+          python -m pip install --upgrade pip
+          pip install "requests>=2.31.0,<3.0.0" pytest || true
+
+      # ==========================================================
+      # 1. TASK: Git Clean
+      # ==========================================================
+      - name: 🧹 Run Git Cleanup
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'Git Clean'
+        env:
+          REPO: ${{ github.repository }}
+          CURRENT_RUN_ID: ${{ github.run_id }}
+          MAX_RUNS: '500'
+        run: |
+          set -euo pipefail
+          FILE=$(find Firent/system_service -maxdepth 2 -name "cleanup.py" | head -n1)
+          if [ -n "$FILE" ]; then
+            python3 "$FILE"
+            echo "SYS_CLEAN_STATUS=✅ Success" >> $GITHUB_ENV
           else
-            echo "❌ 1time.py not found in root!"
+            echo "SYS_CLEAN_STATUS=❌ Not Found" >> $GITHUB_ENV
             exit 1
           fi
 
-      - name: 3. Delete Setup Files & Commit
+      # ==========================================================
+      # 2. TASK: Ripo ZIP
+      # ==========================================================
+      - name: 🗜️ Run Ripo ZIP Pack
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'Ripo ZIP'
         run: |
-          rm -f 1time.py
-          rm -f .github/workflows/1time.yml
+          set -euo pipefail
+          FILE=$(find Firent/system_service/TG_report -maxdepth 2 -name "Ripo_zip_tg.py" | head -n1)
+          if [ -n "$FILE" ]; then
+            python3 "$FILE"
+            echo "SYS_ZIP_STATUS=✅ Sent" >> $GITHUB_ENV
+          else
+            echo "SYS_ZIP_STATUS=❌ Missing" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      # ==========================================================
+      # 3. TASK: VIP Report
+      # ==========================================================
+      - name: 📋 Generate VIP Report
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'report_only'
+        run: |
+          set -euo pipefail
+          FILE="Firent/system_service/TG_report/Ripo_txt_tg.py"
+          if [ -f "$FILE" ]; then
+            echo "✅ Running VIP Generator: $FILE"
+            python3 "$FILE"
+            echo "SYS_REPORT_STATUS=✅ Sent" >> $GITHUB_ENV
+          else
+            echo "❌ VIP Generator not found at $FILE"
+            exit 1
+          fi
+
+      # ==========================================================
+      # 4. TASK: API Tests (Master Runner)
+      # ==========================================================
+      - name: 🚀 Run API Tests / Master Runner
+        if: |
+          github.event.inputs.task == 'all' ||
+          (github.event.inputs.task != 'Git Clean' &&
+          github.event.inputs.task != 'Ripo ZIP' &&
+          github.event.inputs.task != 'report_only' &&
+          github.event.inputs.task != 'all_url_tests' &&
+          !contains(github.event.inputs.task, '_test'))
+        working-directory: Firent/service_api
+        env:
+          TARGET: ${{ github.event.inputs.task }}
+          SYS_CLEAN_STATUS: ${{ env.SYS_CLEAN_STATUS }}
+          SYS_TXT_STATUS: ${{ env.SYS_REPORT_STATUS }}
+          SYS_ZIP_STATUS: ${{ env.SYS_ZIP_STATUS }}
+        run: |
+          set -euo pipefail
+          echo "🎯 TARGET=$TARGET"
           
-          git config --global user.name "Setup Bot"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "Auto-Fix: Created service_url with 40 platform files" || echo "No changes"
-          git push origin HEAD:${{ github.ref_name }}
+          if [ "$TARGET" = "all" ]; then
+            python run_all_tests.py
+            exit $?
+          fi
+
+          STRIPPED="${TARGET%_test}"
+          CANDIDATES=$(find . -type f -name "*.py" \( \
+              -name "${TARGET}.py" -o \
+              -name "*${TARGET}*.py" -o \
+              -name "${STRIPPED}.py" -o \
+              -name "*${STRIPPED}*.py" \) | sort -u)
+
+          if [ -z "$CANDIDATES" ]; then
+            echo "❌ No file matched '$TARGET'."
+            exit 1
+          fi
+          FILE=$(echo "$CANDIDATES" | head -n1)
+          python "$FILE"
+
+      # ==========================================================
+      # 5. TASK: All URL Tests (Runs on 'all' OR 'all_url_tests')
+      # ==========================================================
+      - name: 🌍 Run All URL Tests
+        if: |
+          github.event.inputs.task == 'all' || 
+          github.event.inputs.task == 'all_url_tests'
+        working-directory: Firent/service_url
+        run: |
+          python url_tests_runner.py
+
+      # ==========================================================
+      # 6. TASK: Individual URL Test (Runs only if specific url test selected)
+      # ==========================================================
+      - name: 🎯 Run Specific URL Test
+        if: |
+          github.event.inputs.task != 'all' &&
+          github.event.inputs.task != 'all_url_tests' &&
+          github.event.inputs.task != 'Git Clean' &&
+          github.event.inputs.task != 'Ripo ZIP' &&
+          github.event.inputs.task != 'report_only' &&
+          contains(github.event.inputs.task, '_test')
+        working-directory: Firent/service_url
+        env:
+          TARGET: ${{ github.event.inputs.task }}
+        run: |
+          set -euo pipefail
+          echo "🎯 TARGET=$TARGET"
+          
+          FILE=$(find . -type f -name "${TARGET}.py" | head -n1)
+          
+          if [ -z "$FILE" ]; then
+            echo "❌ URL Test file not found: ${TARGET}.py"
+            exit 1
+          fi
+          
+          echo "✅ Selected: $FILE"
+          python "$FILE"
+
+      - name: 📦 Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-run
+          files: |
+            **/*.txt
+            **/*.zip
+          retention-days: 7
