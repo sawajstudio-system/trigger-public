@@ -2,22 +2,22 @@ import os
 import requests
 import time
 
-print("🚀 AI Auto-Pilot: Building Folders, Files & Checking URLs...")
+print("🚀 AI Auto-Pilot: Looping 26 times to add new URLs...")
 
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
 # Telegram Report
-tg_report = "🤖 <b>[AI AUTO-PILOT REPORT]</b>\n"
+tg_report = "🤖 <b>[AI AUTO-PILOT - 26 URL CYCLE]</b>\n"
 tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-# A se Z tak loop
+# 26 baar loop chalega (A se Z)
 for i in range(26):
     letter = chr(65 + i) # A, B, C... Z
     folder_path = os.path.join(base_dir, letter)
     os.makedirs(folder_path, exist_ok=True)
     
-    print(f"\n🔄 [{letter}] Asking AI for a new URL...")
+    print(f"\n🔄 Processing Folder: {letter} ({i+1}/26)")
     
     # AI se naya URL mangwa rahe hain
     prompt = f"Give me 1 real, working open-source API URL for category '{letter}'. Format strictly: Category|URL. No extra text."
@@ -32,19 +32,15 @@ for i in range(26):
             category = parts[0].strip().replace(' ', '_').lower()
             api_url = parts[1].strip()
             
-            # 1. URL Format Check
             if api_url.startswith("http"):
                 print(f"🔍 Testing URL: {api_url}")
-                
-                # 2. LIVE CHECK (Police)
                 try:
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     if test.status_code in [200, 201, 202]:
-                        # 3. File Banao
+                        # File Banao
                         file_name = f"{letter}1_{category}_url.py"
                         file_path = os.path.join(folder_path, file_name)
                         
-                        # 4. Code Likho
                         code = f"""import sys, os, requests
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from service_api.integrations.telegram_helper import send_telegram_message
@@ -62,16 +58,17 @@ if __name__ == "__main__": run_test()
                         tg_report += f"✅ <b>[{letter}] PASSED:</b> {category}\n  🔗 <code>{api_url}</code>\n\n"
                     else:
                         print(f"❌ FAILED: Status {test.status_code}")
-                        tg_report += f"❌ <b>[{letter}] FAILED:</b> Status {test.status_code}\n  🔗 <code>{api_url}</code>\n\n"
+                        tg_report += f"❌ <b>[{letter}] FAILED:</b> Status {test.status_code}\n\n"
                 except Exception as e:
                     print(f"❌ NETWORK ERROR: {e}")
-                    tg_report += f"❌ <b>[{letter}] ERROR:</b> Network Error\n  🔗 <code>{api_url}</code>\n\n"
+                    tg_report += f"❌ <b>[{letter}] ERROR:</b> Network\n\n"
     except Exception as e:
         print(f"❌ AI Error: {e}")
     
     time.sleep(2) # 2 second ruko
 
 tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+tg_report += f"🎉 <b>26 URL Cycle Complete!</b>\n"
 
 # Telegram par Report bhejna
 token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
@@ -84,4 +81,4 @@ if token and chat_id:
     except:
         print("❌ Report send failed.")
 
-print("\n🎉 AI Auto-Pilot Finished!")
+print("\n🎉 26 URLs Process Complete! Run again manually to add more.")
