@@ -2,14 +2,14 @@ import os
 import requests
 import time
 
-print("🚀 AI Auto-Pilot: Looping 26 times to add new URLs...")
+print("🚀 AI Auto-Pilot: Looping 26 times (1 Message per URL)...")
 
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
-# Telegram Report
-tg_report = "🤖 <b>[AI AUTO-PILOT - 26 URL CYCLE]</b>\n"
-tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+# Telegram details uthana
+token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
+chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
 
 # 26 baar loop chalega (A se Z)
 for i in range(26):
@@ -36,6 +36,7 @@ for i in range(26):
                 print(f"🔍 Testing URL: {api_url}")
                 try:
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                    
                     if test.status_code in [200, 201, 202]:
                         # File Banao
                         file_name = f"{letter}1_{category}_url.py"
@@ -55,30 +56,27 @@ if __name__ == "__main__": run_test()
                             f.write(code)
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
-                        tg_report += f"✅ <b>[{letter}] PASSED:</b> {category}\n  🔗 <code>{api_url}</code>\n\n"
+                        
+                        # 🔥 1 URL PASS = 1 TELEGRAM MESSAGE 🔥
+                        if token and chat_id:
+                            msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n\n📂 Folder: <code>{letter}</code>\n📄 File: <code>{file_name}</code>\n🔗 URL: <code>{api_url}</code>\n📊 Status: {test.status_code}"
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+                            
                     else:
                         print(f"❌ FAILED: Status {test.status_code}")
-                        tg_report += f"❌ <b>[{letter}] FAILED:</b> Status {test.status_code}\n\n"
+                        # Fail hone par bhi message bhejna ho toh (Optional)
+                        if token and chat_id:
+                            msg = f"❌ <b>[{letter}] FAILED</b>\n\n🔗 URL: <code>{api_url}</code>\n📊 Status: {test.status_code}"
+                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+                            
                 except Exception as e:
                     print(f"❌ NETWORK ERROR: {e}")
-                    tg_report += f"❌ <b>[{letter}] ERROR:</b> Network\n\n"
+                    if token and chat_id:
+                        msg = f"❌ <b>[{letter}] ERROR</b>\n\n🔗 URL: <code>{api_url}</code>\n⚠️ Error: Network Issue"
+                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
     except Exception as e:
         print(f"❌ AI Error: {e}")
     
-    time.sleep(2) # 2 second ruko
-
-tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-tg_report += f"🎉 <b>26 URL Cycle Complete!</b>\n"
-
-# Telegram par Report bhejna
-token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
-chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
-
-if token and chat_id:
-    try:
-        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": tg_report, "parse_mode": "HTML"})
-        print("✅ Report sent to Telegram!")
-    except:
-        print("❌ Report send failed.")
+    time.sleep(3) # 3 second ruko taaki Telegram rate limit na aaye
 
 print("\n🎉 26 URLs Process Complete! Run again manually to add more.")
