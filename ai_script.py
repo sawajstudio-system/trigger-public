@@ -1,0 +1,48 @@
+import os, requests, time
+
+print("🚀 AI System Started (26 Folders)...")
+base_dir = "Firent/service_url"
+os.makedirs(base_dir, exist_ok=True)
+
+token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
+chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
+
+for i in range(26):
+    letter = chr(65 + i)
+    folder_path = os.path.join(base_dir, letter)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    print(f"🔄 Processing: {letter}")
+    prompt = f"Give me 1 real open-source API URL for '{letter}'. Format: Category|URL"
+    url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
+    
+    try:
+        res = requests.get(url, timeout=60)
+        if '|' in res.text:
+            parts = res.text.split('|')
+            cat = parts[0].strip().replace(' ', '_').lower()
+            api_url = parts[1].strip()
+            
+            if api_url.startswith("http"):
+                test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                if test.status_code in [200, 201, 202]:
+                    file_name = f"{letter}1_{cat}_url.py"
+                    file_path = os.path.join(folder_path, file_name)
+                    
+                    code = f"""import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    res = requests.get("{api_url}", timeout=15)
+    send_telegram_message(f"✅ {cat}: {{res.status_code}}")
+if __name__ == "__main__": run_test()
+"""
+                    with open(file_path, "w") as f:
+                        f.write(code)
+                    
+                    if token and chat_id:
+                        msg = f"✅ <b>[{letter}] NEW URL</b>\n🔗 <code>{api_url}</code>"
+                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
+    except:
+        pass
+    time.sleep(2)
