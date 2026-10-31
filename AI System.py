@@ -3,9 +3,9 @@ import requests
 import time
 import re
 
-print("🚀 AI System Started (Error-Free Version)...")
+print("🚀 AI System Started (Correct Path Version)...")
 
-# ✅ Sahi Path (Bina Firent/ ke)
+# ✅ Yahan sirf 'service_url' hai, koi 'Firent/' nahi
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
@@ -36,12 +36,11 @@ for i in range(26):
             if api_url.startswith("http"):
                 print(f"🔍 Testing URL: {api_url}")
                 
-                # LIVE CHECK (Yahan error aane par script nahi rukegi)
+                # LIVE CHECK
                 try:
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     
                     if test.status_code in [200, 201, 202]:
-                        # URL Details
                         url_title = "No Title"
                         url_desc = "No Description"
                         try:
@@ -56,7 +55,6 @@ for i in range(26):
                         except:
                             pass
                         
-                        # File Banao
                         file_name = f"{letter}1_{category}_url.py"
                         file_path = os.path.join(folder_path, file_name)
                         
@@ -75,7 +73,7 @@ if __name__ == "__main__": run_test()
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
                         
-                        # 1 URL = 1 Telegram Message
+                        # Telegram Message
                         if token and chat_id:
                             msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n"
                             msg += f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -97,10 +95,8 @@ if __name__ == "__main__": run_test()
             print("⚠️ AI response was not in correct format. Moving to next...")
             
     except Exception as e:
-        # Agar AI se hi response na aaye, toh bhi loop rukega nahi
         print(f"❌ AI Network Error: {e}. Moving to next folder...")
         
-    # 2 second ruko (Telegram rate limit se bachne ke liye)
     time.sleep(2)
 
 print("\n🎉 Saare 26 Folders ka Process Complete! Run again manually to add more.")
