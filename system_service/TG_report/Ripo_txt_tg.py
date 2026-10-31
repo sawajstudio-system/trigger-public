@@ -3,10 +3,7 @@ import sys
 import requests
 import datetime
 
-# Final Master TXT File
 OUTPUT_FILE = "Master_International_Code_Report.txt"
-
-# Har tarah ki text aur code files
 TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml", ".toml", ".ini", ".cfg"}
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".pytest_cache", ".mypy_cache"}
 
@@ -26,7 +23,6 @@ if not all_files:
     print("❌ No code files found.")
     sys.exit(1)
 
-# Sort karo taaki ek order mein aayein
 all_files.sort()
 total_files = len(all_files)
 
@@ -49,13 +45,11 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     # 2. Files List & Code Generation
     for idx, p in enumerate(all_files, 1):
         try:
-            # File details nikalna
             file_size = os.path.getsize(p) / 1024  # KB
             content = open(p, "r", encoding="utf-8", errors="ignore").read()
             line_count = len(content.split('\n'))
             ext = os.path.splitext(p)[1].lower().replace('.', '')
             
-            # Language set karna syntax highlight ke liye
             lang_map = {
                 "py": "python", "yml": "yaml", "yaml": "yaml", "js": "javascript",
                 "ts": "typescript", "json": "json", "md": "markdown", "sh": "bash",
@@ -63,7 +57,6 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             }
             lang = lang_map.get(ext, "text")
 
-            # Emoji select karna
             if ext == "py": emoji = "🐍"
             elif ext in ["yml", "yaml"]: emoji = "⚙️"
             elif ext == "md": emoji = "📘"
@@ -72,7 +65,7 @@ with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             elif ext in ["js", "ts"]: emoji = "🟨"
             else: emoji = "📄"
 
-            # 🔥 FILE BLOCK HEADER (International Style) 🔥
+            # 🔥 FILE BLOCK HEADER 🔥
             f.write("═" * 72 + "\n")
             f.write(f"  📌 FILE [{idx:02d}/{total_files:02d}] : {emoji} {p}\n")
             f.write(f"  ⚖️  Size: {file_size:.2f} KB  |  📝 Lines: {line_count}\n")
