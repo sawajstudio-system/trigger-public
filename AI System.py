@@ -3,8 +3,9 @@ import requests
 import time
 import re
 
-print("🚀 AI System Started: Fetching URLs with Details...")
+print("🚀 AI System Started (Correct Path Version)...")
 
+# ✅ Yahan se 'Firent/' hata diya hai
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
@@ -36,25 +37,23 @@ for i in range(26):
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     
                     if test.status_code in [200, 201, 202]:
-                        # 🔥 YAHAN URL KI JANKARI NIKAL RAHE HAIN 🔥
+                        # URL ki Jankari (Title & Description)
                         url_title = "No Title Found"
                         url_desc = "No Description Found"
                         
                         try:
                             html = test.text
-                            # Title nikalo
                             title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
                             if title_match:
                                 url_title = title_match.group(1).strip()
                             
-                            # Description nikalo
                             desc_match = re.search(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
                             if not desc_match:
                                 desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
                             if desc_match:
                                 url_desc = desc_match.group(1).strip()
                         except:
-                            pass # Agar HTML nahi mila toh default rehne do
+                            pass
                         
                         # File Banao
                         file_name = f"{letter}1_{category}_url.py"
@@ -75,7 +74,7 @@ if __name__ == "__main__": run_test()
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
                         
-                        # 🔥 1 URL PASS = 1 TELEGRAM MESSAGE WITH DETAILS 🔥
+                        # Telegram Message with Details
                         if token and chat_id:
                             msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n"
                             msg += f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -86,7 +85,6 @@ if __name__ == "__main__": run_test()
                             msg += f"📂 <b>Saved in:</b> <code>{letter}/{file_name}</code>\n"
                             msg += f"📊 <b>Status:</b> {test.status_code}"
                             requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
-                            
                     else:
                         print(f"❌ FAILED: Status {test.status_code}")
                 except Exception as e:
@@ -94,6 +92,6 @@ if __name__ == "__main__": run_test()
     except Exception as e:
         print(f"❌ AI Error: {e}")
     
-    time.sleep(3) # Rate limit se bachne ke liye
+    time.sleep(3)
 
 print("\n🎉 26 URLs Process Complete!")
