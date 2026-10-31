@@ -4,11 +4,11 @@
 import os
 import sys
 
-# ✅ FIX: path setup taaki telegram_01_helper import ho sake
+# ✅ FIX: path setup taaki telegram_helper import ho sake
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from telegram_01_helper import send_telegram_message
+from telegram_helper import send_telegram_message
 
 
 def run_test():

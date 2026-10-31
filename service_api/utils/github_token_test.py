@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 import os
 import sys
 import requests
-from service_api.integrations.telegram_01_helper import send_telegram_message
+from service_api.integrations.telegram_helper import send_telegram_message
 
 def run_test():
     token = os.getenv("TOKEN_GITHUB")

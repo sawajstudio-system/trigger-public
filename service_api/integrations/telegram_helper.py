@@ -130,7 +130,7 @@ def _redact(text: str, secret: str) -> str:
 
 
 # =============================================================================
-#  SELF-TEST (run: python telegram_01_helper.py)
+#  SELF-TEST (run: python telegram_helper.py)
 # =============================================================================
 if __name__ == "__main__":
     ok = send_telegram_message(

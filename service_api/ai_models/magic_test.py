@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import requests
-from service_api.integrations.telegram_01_helper import send_telegram_message
+from service_api.integrations.telegram_helper import send_telegram_message
 
 def run_test():
     api_key = os.getenv("MAGICHOUR_API_KEY")
