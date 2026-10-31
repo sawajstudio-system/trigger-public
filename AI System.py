@@ -5,7 +5,7 @@ import re
 
 print("🚀 AI System Started (Correct Path Version)...")
 
-# ✅ Yahan sirf 'service_url' hai, koi 'Firent/' nahi
+# ✅ Sahi Path (Bina Firent/ ke)
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
@@ -24,7 +24,6 @@ for i in range(26):
         prompt = f"Give me 1 real, working open-source API URL for '{letter}'. Format strictly: Category|URL. No extra text."
         url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
         
-        # AI se URL mangwana
         res = requests.get(url, timeout=30)
         ai_response = res.text
         
@@ -36,7 +35,6 @@ for i in range(26):
             if api_url.startswith("http"):
                 print(f"🔍 Testing URL: {api_url}")
                 
-                # LIVE CHECK
                 try:
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     
@@ -73,7 +71,6 @@ if __name__ == "__main__": run_test()
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
                         
-                        # Telegram Message
                         if token and chat_id:
                             msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n"
                             msg += f"━━━━━━━━━━━━━━━━━━━━\n"
@@ -99,4 +96,4 @@ if __name__ == "__main__": run_test()
         
     time.sleep(2)
 
-print("\n🎉 Saare 26 Folders ka Process Complete! Run again manually to add more.")
+print("\n🎉 Saare 26 Folders ka Process Complete!")
