@@ -19,17 +19,17 @@ jobs:
       - name: 2. Fix Imports in All Python Files
         run: |
           echo "🔍 Searching and replacing imports..."
-          # Saari python files dhoondh kar import theek kar rahe hain
-          find Firent -name "*.py" -type f -exec sed -i 's/telegram_01_helper/telegram_helper/g' {} +
+          # Yahan se 'Firent/' hata diya hai
+          find service_api -name "*.py" -type f -exec sed -i 's/telegram_01_helper/telegram_helper/g' {} +
           echo "✅ Imports updated in all files."
 
       - name: 3. Update universal_master.yml
         run: |
           echo "📝 Updating workflow options..."
-          YML_FILE="Firent/.github/workflows/universal_master.yml"
+          # YML file ka path bhi direct set kiya hai
+          YML_FILE=".github/workflows/universal_master.yml"
           
           if [ -f "$YML_FILE" ]; then
-            # YML mein option ka naam theek kar rahe hain
             sed -i 's/telegram_02_bot_test/telegram_bot_test/g' "$YML_FILE"
             echo "✅ YML option updated."
           else
