@@ -1,17 +1,16 @@
 import os
 import requests
 import time
+import re
 
-print("🚀 AI Auto-Pilot: Looping 26 times (1 Message per URL)...")
+print("🚀 AI System Started: Fetching URLs with Details...")
 
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
-# Telegram details uthana
 token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
 chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
 
-# 26 baar loop chalega (A se Z)
 for i in range(26):
     letter = chr(65 + i) # A, B, C... Z
     folder_path = os.path.join(base_dir, letter)
@@ -19,8 +18,7 @@ for i in range(26):
     
     print(f"\n🔄 Processing Folder: {letter} ({i+1}/26)")
     
-    # AI se naya URL mangwa rahe hain
-    prompt = f"Give me 1 real, working open-source API URL for category '{letter}'. Format strictly: Category|URL. No extra text."
+    prompt = f"Give me 1 real, working open-source API URL for '{letter}'. Format strictly: Category|URL. No extra text."
     url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
     
     try:
@@ -38,6 +36,26 @@ for i in range(26):
                     test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
                     
                     if test.status_code in [200, 201, 202]:
+                        # 🔥 YAHAN URL KI JANKARI NIKAL RAHE HAIN 🔥
+                        url_title = "No Title Found"
+                        url_desc = "No Description Found"
+                        
+                        try:
+                            html = test.text
+                            # Title nikalo
+                            title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE | re.DOTALL)
+                            if title_match:
+                                url_title = title_match.group(1).strip()
+                            
+                            # Description nikalo
+                            desc_match = re.search(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
+                            if not desc_match:
+                                desc_match = re.search(r'<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']', html, re.IGNORECASE | re.DOTALL)
+                            if desc_match:
+                                url_desc = desc_match.group(1).strip()
+                        except:
+                            pass # Agar HTML nahi mila toh default rehne do
+                        
                         # File Banao
                         file_name = f"{letter}1_{category}_url.py"
                         file_path = os.path.join(folder_path, file_name)
@@ -57,26 +75,25 @@ if __name__ == "__main__": run_test()
                         
                         print(f"✅ SUCCESS: Saved to {letter}/{file_name}")
                         
-                        # 🔥 1 URL PASS = 1 TELEGRAM MESSAGE 🔥
+                        # 🔥 1 URL PASS = 1 TELEGRAM MESSAGE WITH DETAILS 🔥
                         if token and chat_id:
-                            msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n\n📂 Folder: <code>{letter}</code>\n📄 File: <code>{file_name}</code>\n🔗 URL: <code>{api_url}</code>\n📊 Status: {test.status_code}"
+                            msg = f"✅ <b>[{letter}] NEW URL ADDED</b>\n"
+                            msg += f"━━━━━━━━━━━━━━━━━━━━\n"
+                            msg += f"🔗 <b>URL:</b> <code>{api_url}</code>\n"
+                            msg += f"📌 <b>Title:</b> {url_title}\n"
+                            msg += f"📝 <b>Description:</b> {url_desc}\n"
+                            msg += f"━━━━━━━━━━━━━━━━━━━━\n"
+                            msg += f"📂 <b>Saved in:</b> <code>{letter}/{file_name}</code>\n"
+                            msg += f"📊 <b>Status:</b> {test.status_code}"
                             requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
                             
                     else:
                         print(f"❌ FAILED: Status {test.status_code}")
-                        # Fail hone par bhi message bhejna ho toh (Optional)
-                        if token and chat_id:
-                            msg = f"❌ <b>[{letter}] FAILED</b>\n\n🔗 URL: <code>{api_url}</code>\n📊 Status: {test.status_code}"
-                            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
-                            
                 except Exception as e:
                     print(f"❌ NETWORK ERROR: {e}")
-                    if token and chat_id:
-                        msg = f"❌ <b>[{letter}] ERROR</b>\n\n🔗 URL: <code>{api_url}</code>\n⚠️ Error: Network Issue"
-                        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"})
     except Exception as e:
         print(f"❌ AI Error: {e}")
     
-    time.sleep(3) # 3 second ruko taaki Telegram rate limit na aaye
+    time.sleep(3) # Rate limit se bachne ke liye
 
-print("\n🎉 26 URLs Process Complete! Run again manually to add more.")
+print("\n🎉 26 URLs Process Complete!")
