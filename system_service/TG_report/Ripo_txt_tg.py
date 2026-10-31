@@ -3,85 +3,92 @@ import sys
 import requests
 import datetime
 
-OUTPUT_FILE = "production_report.txt"
+# Final Master TXT File
+OUTPUT_FILE = "Master_International_Code_Report.txt"
 
-# Yahan saari text files ki list hai
-TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".css", ".js", ".sh", ".env", ".sql", ".xml"}
-SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build"}
+# Har tarah ki text aur code files
+TEXT_EXTS = {".py", ".txt", ".yml", ".yaml", ".md", ".json", ".css", ".js", ".ts", ".sh", ".env", ".sql", ".xml", ".toml", ".ini", ".cfg"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "dist", "build", ".pytest_cache", ".mypy_cache"}
 
-files = []
-dirs_set = set()
+all_files = []
 
-# Dono repos scan karo
+# Dono repos ko scan kar raha hai (Firent + Backend)
 for repo in ["Firent", "Backend"]:
     if os.path.isdir(repo):
         for root, dirs, fs in os.walk(repo):
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
             for f in fs:
                 p = os.path.join(root, f)
-                if os.path.splitext(p)[1].lower() in TEXT_EXTS:
-                    files.append((p, p))
-                    # Folder structure nikalne ke liye
-                    parts = p.split(os.sep)
-                    for i in range(1, len(parts)):
-                        dirs_set.add(os.sep.join(parts[:i]))
+                if os.path.splitext(p)[1].lower() in TEXT_EXTS: 
+                    all_files.append(p)
 
-if not files:
-    print("❌ No text files found.")
+if not all_files:
+    print("❌ No code files found.")
     sys.exit(1)
 
+# Sort karo taaki ek order mein aayein
+all_files.sort()
+total_files = len(all_files)
+
+print(f"📦 Combining {total_files} files into one International Master TXT...")
+
 # ==========================================
-# VIP PREMIUM REPORT GENERATION
+# VVIP INTERNATIONAL REPORT GENERATION
 # ==========================================
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-    # 1. Premium Header
+    # 1. Top Cover (Premium Style)
     f.write("╔══════════════════════════════════════════════════════════════════════╗\n")
-    f.write("║       👑  VVIP PREMIUM PRODUCTION CODE REPORT  👑                    ║\n")
-    f.write("╚══════════════════════════════════════════════════════════════════════╝\n\n")
-    
-    f.write(f"⏱️  **Generated On:** {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
-    f.write(f"📦  **Total Repos:** Firent + Backend\n")
-    f.write(f"📄  **Total Files:** {len(files)}\n")
-    f.write("━" * 72 + "\n\n")
+    f.write("║  🌍 INTERNATIONAL DEVELOPER MASTER CODE REPORT                       ║\n")
+    f.write("║  ──────────────────────────────────────────────────────────────────  ║\n")
+    f.write("║  Project: Firent + Backend Ecosystem                                 ║\n")
+    f.write("║  Date: " + datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC') + "                               ║\n")
+    f.write(f"║  Total Files Included: {total_files:<46} ║\n")
+    f.write("║  Status: PRODUCTION READY ✅                                         ║\n")
+    f.write("╚══════════════════════════════════════════════════════════════════════╝\n\n\n")
 
-    # 2. Folder Structure (Tree View)
-    f.write("📁 **PROJECT DIRECTORY STRUCTURE**\n")
-    f.write("━" * 72 + "\n")
-    for d in sorted(dirs_set):
-        depth = d.count(os.sep)
-        indent = "    " * depth
-        folder_name = os.path.basename(d)
-        f.write(f"{indent}📂 {folder_name}/\n")
-    f.write("\n" + "━" * 72 + "\n\n")
-
-    # 3. Table of Contents
-    f.write("📑 **TABLE OF CONTENTS**\n")
-    f.write("━" * 72 + "\n")
-    for idx, (_, disp) in enumerate(files, 1):
-        ext = os.path.splitext(disp)[1].lower()
-        icon = "🐍" if ext == ".py" else "📄" if ext in [".txt", ".md"] else "⚙️" if ext in [".yml", ".yaml"] else "📜"
-        f.write(f"  {idx:02d}. {icon} {disp}\n")
-    f.write("━" * 72 + "\n\n\n")
-
-    # 4. Code Files (VIP Box)
-    for idx, (_, p) in enumerate(files, 1):
+    # 2. Files List & Code Generation
+    for idx, p in enumerate(all_files, 1):
         try:
+            # File details nikalna
+            file_size = os.path.getsize(p) / 1024  # KB
             content = open(p, "r", encoding="utf-8", errors="ignore").read()
+            line_count = len(content.split('\n'))
+            ext = os.path.splitext(p)[1].lower().replace('.', '')
             
-            # File Box Header
-            f.write(f"┏{'━' * 70}┓\n")
-            f.write(f"┃ 📄 FILE [{idx}/{len(files)}]: {p:<48} ┃\n")
-            f.write(f"┗{'━' * 70}┛\n")
+            # Language set karna syntax highlight ke liye
+            lang_map = {
+                "py": "python", "yml": "yaml", "yaml": "yaml", "js": "javascript",
+                "ts": "typescript", "json": "json", "md": "markdown", "sh": "bash",
+                "sql": "sql", "xml": "xml", "html": "html", "css": "css"
+            }
+            lang = lang_map.get(ext, "text")
+
+            # Emoji select karna
+            if ext == "py": emoji = "🐍"
+            elif ext in ["yml", "yaml"]: emoji = "⚙️"
+            elif ext == "md": emoji = "📘"
+            elif ext == "json": emoji = "🔧"
+            elif ext in ["sh", "env"]: emoji = "💻"
+            elif ext in ["js", "ts"]: emoji = "🟨"
+            else: emoji = "📄"
+
+            # 🔥 FILE BLOCK HEADER (International Style) 🔥
+            f.write("═" * 72 + "\n")
+            f.write(f"  📌 FILE [{idx:02d}/{total_files:02d}] : {emoji} {p}\n")
+            f.write(f"  ⚖️  Size: {file_size:.2f} KB  |  📝 Lines: {line_count}\n")
+            f.write("═" * 72 + "\n\n")
             
-            # Code block formatting
-            f.write("```python\n" if p.endswith('.py') else "```yaml\n" if p.endswith(('.yml', '.yaml')) else "```text\n")
+            # Code Block (Syntax Highlighting)
+            f.write(f"```{lang}\n")
             f.write(content)
-            f.write("\n```\n\n\n")
+            if not content.endswith("\n"):
+                f.write("\n")
+            f.write("```\n\n\n")  # Extra spaces for separation
             
         except Exception as e:
             f.write(f"❌ Error reading file {p}: {e}\n\n")
 
-print(f"✅ VVIP Premium Report Generated: {OUTPUT_FILE} ({len(files)} files)")
+print(f"✅ Master Report Generated: {OUTPUT_FILE}")
 
 # ==========================================
 # TELEGRAM SEND
@@ -91,11 +98,11 @@ c = os.environ.get("CHAT_ID")
 if t and c:
     url = f"https://api.telegram.org/bot{t}/sendDocument"
     caption = (
-        "👑 <b>VVIP PREMIUM CODE REPORT</b> 👑\n"
+        "🌍 <b>INTERNATIONAL MASTER CODE REPORT</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━\n"
         f"📂 <b>Repos:</b> Firent + Backend\n"
-        f"📄 <b>Total Files:</b> {len(files)}\n"
-        f"✨ <i>VIP Format & Structure Included</i>"
+        f"📄 <b>Total Files:</b> {total_files}\n"
+        f"✨ <i>All code combined with International Formatting</i>"
     )
     try:
         with open(OUTPUT_FILE, "rb") as f:
