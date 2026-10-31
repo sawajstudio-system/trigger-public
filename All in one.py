@@ -1,9 +1,16 @@
 import os
+import shutil
 
 print("🚀 Starting All-in-One Real Platform Setup...")
 
-# Path setup (Jahan files banani hain)
-BASE_DIR = "Firent/service_url"
+# 1. Delete the wrong double folder if it exists
+wrong_folder = "Firent/Firent"
+if os.path.exists(wrong_folder):
+    shutil.rmtree(wrong_folder)
+    print(f"🗑️ Deleted wrong folder: {wrong_folder}")
+
+# 2. Correct path (Bina Firent/ ke, kyunki script khud Firent folder mein hai)
+BASE_DIR = "service_url"
 
 # Folders create karo
 folders = ["translator", "voice", "background", "islamic"]
