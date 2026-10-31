@@ -1,0 +1,197 @@
+name: One-Time Service URL Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup_service_url:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TOKEN_GITHUB }}
+          fetch-depth: 0
+
+      - name: 2. Create Folders & Write Files
+        run: |
+          echo "🚀 Creating service_url structure..."
+          mkdir -p Firent/service_url/image
+          mkdir -p Firent/service_url/audio
+          mkdir -p Firent/service_url/video
+          mkdir -p Firent/service_url/ai_chat
+
+          # ==========================================
+          # 🖼️ IMAGE GENERATION FILES
+          # ==========================================
+          cat << 'EOF' > Firent/service_url/image/pollinations_test.py
+import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        res = requests.get("https://image.pollinations.ai/prompt/cyberpunk%20city", timeout=60)
+        send_telegram_message(f"✅ Pollinations: Status {res.status_code}")
+    except Exception as e: send_telegram_message(f"❌ Pollinations Error: {e}")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/veida_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        import veida
+        send_telegram_message("✅ Veida Library: Found (Run manually to generate)")
+    except ImportError: send_telegram_message("❌ Veida: Not installed (pip install veida)")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/stable_diffusion_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    send_telegram_message("✅ Stable Diffusion (A1111): Requires Local Setup (http://127.0.0.1:7860)")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/invokeai_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    send_telegram_message("✅ InvokeAI: Requires Local Setup (http://localhost:9090)")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/kavel_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    send_telegram_message("✅ Kavel (Go): Requires Go setup (go get github.com/hanshs474/kavel-go)")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/together_flux_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    send_telegram_message("✅ Together.ai (FLUX): Visit https://api.together.xyz/playground")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/ai_image_editor_test.py
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    send_telegram_message("✅ AI Image Editor: Browser-based at ai-image-editor.online")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/flux_anime_test.py
+import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        res = requests.get("https://image.pollinations.ai/prompt/anime%20girl?model=flux-anime", timeout=60)
+        send_telegram_message(f"✅ Flux Anime: Status {res.status_code}")
+    except Exception as e: send_telegram_message(f"❌ Flux Anime Error: {e}")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/dalle3_test.py
+import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        res = requests.get("https://image.pollinations.ai/prompt/dog?model=dalle3", timeout=60)
+        send_telegram_message(f"✅ DALL-E 3: Status {res.status_code}")
+    except Exception as e: send_telegram_message(f"❌ DALL-E 3 Error: {e}")
+if __name__ == "__main__": run_test()
+EOF
+
+          cat << 'EOF' > Firent/service_url/image/sd3_test.py
+import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        res = requests.get("https://image.pollinations.ai/prompt/car?model=sd3", timeout=60)
+        send_telegram_message(f"✅ SD3: Status {res.status_code}")
+    except Exception as e: send_telegram_message(f"❌ SD3 Error: {e}")
+if __name__ == "__main__": run_test()
+EOF
+
+          # ==========================================
+          # 🎙️ AUDIO / TTS FILES
+          # ==========================================
+          echo "# TTS Studio Placeholder" > Firent/service_url/audio/tts_studio_test.py
+          echo "# Kokoro Placeholder" > Firent/service_url/audio/kokoro_test.py
+          echo "# Edge TTS Placeholder" > Firent/service_url/audio/edge_tts_test.py
+          echo "# Wavhost Placeholder" > Firent/service_url/audio/wavhost_test.py
+          echo "# Mizuoto Placeholder" > Firent/service_url/audio/mizuoto_test.py
+          echo "# Plapre Placeholder" > Firent/service_url/audio/plapre_test.py
+          echo "# Phonon Placeholder" > Firent/service_url/audio/phonon_tts_test.py
+          echo "# Aloud Placeholder" > Firent/service_url/audio/aloud_test.py
+          echo "# Speechma Placeholder" > Firent/service_url/audio/speechma_test.py
+          echo "# ReadAnyText Placeholder" > Firent/service_url/audio/readanytext_test.py
+
+          # ==========================================
+          # 📹 VIDEO FILES
+          # ==========================================
+          echo "# Phane Placeholder" > Firent/service_url/video/phane_test.py
+          echo "# KupkaProd Placeholder" > Firent/service_url/video/kupkaprod_test.py
+          echo "# ChainStreet Placeholder" > Firent/service_url/video/chainstreet_test.py
+          echo "# Auto Video Placeholder" > Firent/service_url/video/automated_video_gen_test.py
+          echo "# Hailuo Placeholder" > Firent/service_url/video/hailuo_local_test.py
+          echo "# Pexels Placeholder" > Firent/service_url/video/pexels_url_test.py
+          echo "# Pixabay Placeholder" > Firent/service_url/video/pixabay_url_test.py
+          echo "# Mixkit Placeholder" > Firent/service_url/video/mixkit_test.py
+          echo "# Coverr Placeholder" > Firent/service_url/video/coverr_test.py
+          echo "# Librestock Placeholder" > Firent/service_url/video/librestock_test.py
+
+          # ==========================================
+          # 🤖 AI CHAT FILES
+          # ==========================================
+          echo "# LocalMind Placeholder" > Firent/service_url/ai_chat/localmind_test.py
+          echo "# Aether Placeholder" > Firent/service_url/ai_chat/aether_test.py
+          echo "# Aparte Placeholder" > Firent/service_url/ai_chat/aparte_test.py
+          echo "# Twin Placeholder" > Firent/service_url/ai_chat/twin_o_matic_test.py
+          echo "# Dulus Placeholder" > Firent/service_url/ai_chat/dulus_test.py
+          
+          cat << 'EOF' > Firent/service_url/ai_chat/pollinations_chat_test.py
+import sys, os, requests
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from service_api.integrations.telegram_helper import send_telegram_message
+def run_test():
+    try:
+        res = requests.get("https://text.pollinations.ai/Hello", timeout=15)
+        send_telegram_message(f"✅ Pollinations Chat: {res.text[:50]}")
+    except Exception as e: send_telegram_message(f"❌ Chat Error: {e}")
+if __name__ == "__main__": run_test()
+EOF
+          
+          echo "# Duck AI Placeholder" > Firent/service_url/ai_chat/duck_ai_test.py
+          echo "# AskAI Placeholder" > Firent/service_url/ai_chat/askai_test.py
+          echo "# LLM Browser Placeholder" > Firent/service_url/ai_chat/llm_browser_test.py
+          echo "# Unee Placeholder" > Firent/service_url/ai_chat/unee_test.py
+
+          echo "✅ All 40 files created."
+
+      - name: 3. Commit and Push
+        run: |
+          git config --global user.name "Setup Bot"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Setup: Created service_url folder with 40 platform files" || echo "No changes"
+          git push origin HEAD:${{ github.ref_name }}
