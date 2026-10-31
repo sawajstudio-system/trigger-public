@@ -1,1 +1,0 @@
-# KupkaProd Placeholder
