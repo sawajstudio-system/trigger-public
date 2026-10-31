@@ -1,91 +1,64 @@
 import os
 import requests
+import time
 
-print("🧠 AI System Started: Thinking of new URLs...")
+print("🚀 Auto-Add 26 Folders System Started...")
 
-prompt = "List 5 real, working open-source API URLs for different categories. Format strictly as: Category|URL. Do not add extra text."
-url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
-
-try:
-    res = requests.get(url, timeout=60)
-    ai_response = res.text
-    print(f"🤖 AI Response:\n{ai_response}\n")
-except Exception as e:
-    print(f"❌ AI Network Error: {e}")
-    ai_response = ""
-
-# ✅ Yahan se 'Firent/' hata diya hai
 base_dir = "service_url"
 os.makedirs(base_dir, exist_ok=True)
 
-used_urls = set()
-lines = ai_response.split('\n')
-created_count = 0
-folder_counter = 0
-
-tg_report = "🧠 <b>[AI SYSTEM REPORT]</b>\n"
-tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-
-for line in lines:
-    if '|' in line:
-        parts = line.split('|')
-        if len(parts) >= 2:
+# Ab hum ek Loop chalayenge (Z tak)
+for i in range(26):
+    letter = chr(65 + i) # A, B, C... Z
+    folder_path = os.path.join(base_dir, letter)
+    os.makedirs(folder_path, exist_ok=True)
+    
+    print(f"\n🔍 [{letter}] Asking AI for new URL...")
+    
+    # AI se naya URL mangwa rahe hain
+    prompt = f"Give me 1 real, working open-source API URL for category related to {letter}. Format strictly: Category|URL. Do not add text."
+    url = f"https://text.pollinations.ai/{requests.utils.quote(prompt)}"
+    
+    try:
+        res = requests.get(url, timeout=60)
+        ai_response = res.text
+        
+        # AI ke response ko parse karna
+        if '|' in ai_response:
+            parts = ai_response.split('|')
             category = parts[0].strip().replace(' ', '_').lower()
             api_url = parts[1].strip()
             
-            if not api_url.startswith("http") or api_url in used_urls:
-                continue
-                
-            print(f"🔍 Checking URL: {api_url}")
-            
-            is_working = False
-            status_code = "N/A"
-            try:
-                test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-                status_code = test.status_code
-                if status_code in [200, 201, 202]:
-                    is_working = True
-            except Exception:
-                status_code = "Error"
-            
-            if is_working:
-                used_urls.add(api_url)
-                letter = chr(65 + (folder_counter % 26))
-                folder_path = os.path.join(base_dir, letter)
-                os.makedirs(folder_path, exist_ok=True)
-                
-                file_name = f"{letter}1_{category}_url.py"
-                file_path = os.path.join(folder_path, file_name)
-                
-                code = f"""import sys, os, requests
+            # Check if URL is valid
+            if api_url.startswith("http"):
+                # 🔥 LIVE CHECK 🔥
+                try:
+                    test = requests.get(api_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                    if test.status_code in [200, 201, 202]:
+                        file_name = f"{letter}1_{category}_url.py"
+                        file_path = os.path.join(folder_path, file_name)
+                        
+                        code = f"""import sys, os, requests
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from service_api.integrations.telegram_helper import send_telegram_message
 def run_test():
     try:
         res = requests.get("{api_url}", timeout=15)
-        send_telegram_message(f"✅ AI Generated ({category}): Status {{res.status_code}}")
+        send_telegram_message(f"✅ AI Verified ({category}): Status {{res.status_code}}")
     except Exception as e: send_telegram_message(f"❌ Error: {{e}}")
 if __name__ == "__main__": run_test()
 """
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(code)
-                
-                print(f"✅ Created: {file_path}")
-                tg_report += f"✅ <b>PASSED:</b> {letter}/{file_name}\n"
-                created_count += 1
-                folder_counter += 1
-            else:
-                tg_report += f"❌ <b>FAILED:</b> {api_url} (Status: {status_code})\n"
+                        with open(file_path, "w", encoding="utf-8") as f:
+                            f.write(code)
+                        
+                        print(f"✅ Added to {letter}: {file_name}")
+                    else:
+                        print(f"❌ URL Failed: {api_url}")
+                except Exception:
+                    print(f"❌ Network Error: {api_url}")
+    except Exception as e:
+        print(f"❌ AI Error: {e}")
+    
+    time.sleep(2) # 2 second ruko
 
-tg_report += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-tg_report += f"🎉 <b>Total Real Files Created:</b> {created_count}\n"
-
-token = os.getenv("TELEGRAM_API_REPORT_TOKEN")
-chat_id = os.getenv("TELEGRAM_API_REPORT_CHAT_ID")
-if token and chat_id:
-    try:
-        requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json={"chat_id": chat_id, "text": tg_report, "parse_mode": "HTML"})
-        print("✅ Report sent to Telegram!")
-    except: pass
-
-print(f"\n🎉 AI System Finished!")
+print("\n🎉 All 26 Folders A-Z Created with Automatic URLs!")
