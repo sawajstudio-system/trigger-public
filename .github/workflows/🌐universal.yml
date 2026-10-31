@@ -1,4 +1,4 @@
-name: Universal Master
+name: 🌐Universal
 
 on:
   workflow_dispatch:
@@ -20,8 +20,8 @@ on:
           - 'pixabay_test'
           - 'pexels_test'
           - 'coverr_test'
-          - 'telegram_02_bot_test'
-          - 'github_token_test'          # <-- Yahan se 03 hata diya hai
+          - 'telegram_bot_test'
+          - 'github_token_test'
           - 'gemini_test'
           - 'groq_test'
           - 'openrouter_test'
@@ -183,7 +183,7 @@ jobs:
               -name "${TARGET}.py" -o \
               -name "*${TARGET}*.py" -o \
               -name "${STRIPPED}.py" -o \
-              -name "*${STRIPPED}.py" \) | sort -u)
+              -name "*${STRIPPED}*.py" \) | sort -u)
 
           if [ -z "$CANDIDATES" ]; then
             echo "❌ No file matched '$TARGET'."
